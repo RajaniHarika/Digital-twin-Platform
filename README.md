@@ -70,5 +70,5 @@ A cloud-native platform that creates a virtual replica of Kubernetes infrastruct
 
 \### Cloud
 
-\- Azure
+\- AWS
 
