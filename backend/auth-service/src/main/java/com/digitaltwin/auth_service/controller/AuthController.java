@@ -1,5 +1,7 @@
 package com.digitaltwin.auth_service.controller;
 
+import com.digitaltwin.auth_service.dto.AuthResponse;
+import com.digitaltwin.auth_service.dto.LoginRequest;
 import com.digitaltwin.auth_service.dto.RegisterUserRequest;
 import com.digitaltwin.auth_service.entity.User;
 import com.digitaltwin.auth_service.service.UserService;
@@ -16,5 +18,12 @@ public class AuthController {
     @PostMapping("/register")
     public User registerUser(@RequestBody RegisterUserRequest request) {
         return userService.registerUser(request);
+    }
+
+    @PostMapping("/login")
+    public AuthResponse loginUser(
+            @RequestBody LoginRequest request) {
+
+        return userService.loginUser(request);
     }
 }
