@@ -1,25 +1,49 @@
 package com.digitaltwin.auth_service.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.web.SecurityFilterChain;
+
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
-        System.out.println("=================================");
-        System.out.println("CUSTOM SECURITY CONFIG LOADED");
-        System.out.println("=================================");
+        http
+                .csrf(csrf -> csrf.disable())
 
-        http.csrf(csrf -> csrf.disable());
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS))
 
-        http.authorizeHttpRequests(auth ->
-                auth.anyRequest().permitAll()
-        );
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(
+                                "/auth/register",
+                                "/auth/login"
+                        ).permitAll()
+
+                        .anyRequest().authenticated()
+                )
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
