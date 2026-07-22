@@ -8,6 +8,11 @@ public class TopologyController {
         this.topologyService = topologyService;
     }
 
+    @GetMapping("/health")
+    public String health() {
+        ...
+    }
+
     @GetMapping("/nodes")
     public List<NodeDto> getNodes() {
         return topologyService.getAllNodes();

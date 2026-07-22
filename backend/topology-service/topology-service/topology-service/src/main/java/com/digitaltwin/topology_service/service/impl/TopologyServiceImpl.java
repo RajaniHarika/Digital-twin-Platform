@@ -1,12 +1,15 @@
 package com.digitaltwin.topology_service.service.impl;
 
 import com.digitaltwin.topology_service.dto.NodeDto;
+import com.digitaltwin.topology_service.dto.PodDto;
 import com.digitaltwin.topology_service.service.TopologyService;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -66,5 +69,34 @@ public class TopologyServiceImpl implements TopologyService {
         }
 
         return nodes;
+    }
+
+    @Override
+    public List<PodDto> getAllPods() {
+
+        List<PodDto> pods = new ArrayList<>();
+
+        try {
+
+            CoreV1Api api = new CoreV1Api(apiClient);
+
+            V1PodList podList = api.listPodForAllNamespaces().execute();
+
+            for (V1Pod pod : podList.getItems()) {
+
+                pods.add(
+                        new PodDto(
+                                pod.getMetadata().getName(),
+                                pod.getMetadata().getNamespace(),
+                                pod.getStatus().getPhase()
+                        )
+                );
+            }
+
+        } catch (ApiException e) {
+            throw new RuntimeException("Failed to fetch Kubernetes pods", e);
+        }
+
+        return pods;
     }
 }

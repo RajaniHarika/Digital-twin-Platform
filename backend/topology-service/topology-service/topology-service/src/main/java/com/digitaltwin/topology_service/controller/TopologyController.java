@@ -1,6 +1,7 @@
 package com.digitaltwin.topology_service.controller;
 
 import com.digitaltwin.topology_service.dto.NodeDto;
+import com.digitaltwin.topology_service.dto.PodDto;
 import com.digitaltwin.topology_service.service.TopologyService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,5 +22,10 @@ public class TopologyController {
     @GetMapping("/nodes")
     public List<NodeDto> getNodes() {
         return topologyService.getAllNodes();
+    }
+
+    @GetMapping("/pods")
+    public List<PodDto> getPods() {
+        return topologyService.getAllPods();
     }
 }
