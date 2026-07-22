@@ -1,6 +1,34 @@
 import { lazy } from 'react';
 import Dashboard from '../features/dashboard/Dashboard';
+import CloudDashboard from '../components/cloud/CloudDashboard';
+import authService from '../services/auth';
 
+import { Box, Typography } from '@mui/material';
+
+const ProjectManagerDashboard = () => (
+  <Box sx={{ p: 4, textAlign: 'center', mt: 10 }}>
+    <Typography variant="h4">Project Manager Dashboard</Typography>
+    <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+      This dashboard is currently under construction.
+    </Typography>
+  </Box>
+);
+
+const DashboardRouter = () => {
+  const user = authService.getCurrentUser();
+  const role = user?.role;
+  
+  if (role === 'Cloud Engineer') {
+    return <CloudDashboard />;
+  }
+  
+  if (role === 'Project Manager') {
+    return <ProjectManagerDashboard />;
+  }
+  
+  // Default to DevOps Dashboard for DevOps Engineer and other roles
+  return <Dashboard />;
+};
 const Topology = lazy(() => import('../features/topology/Topology'));
 const Simulation = lazy(() => import('../features/simulation/Simulation'));
 const Prediction = lazy(() => import('../features/prediction/Prediction'));
@@ -20,7 +48,7 @@ const routes = [
   },
   {
     path: '/',
-    element: <Dashboard />,
+    element: <DashboardRouter />,
     title: 'Dashboard',
   },
   {
