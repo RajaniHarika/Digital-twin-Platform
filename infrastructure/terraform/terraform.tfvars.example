@@ -1,0 +1,22 @@
+# Copy this file to terraform.tfvars and fill in your values before running terraform apply
+
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "digitaltwin"
+
+# ─── Networking ──────────────────────────────────────────────────────────────
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+availability_zones  = ["us-east-1a", "us-east-1b"]
+
+# ─── Compute (Free Tier Eligible Flex Instances) ──────────────────────────────
+master_instance_type = "c7i-flex.large"   # 2 vCPU / 4 GiB RAM - Free Tier Eligible
+worker_instance_type = "m7i-flex.large"   # 2 vCPU / 8 GiB RAM - Free Tier Eligible
+master_volume_size   = 15                 # GB — stays within 30 GB Free Tier limit
+worker_volume_size   = 15                 # GB — stays within 30 GB Free Tier limit
+ubuntu_ami           = "ami-0c7217cdde317cfec"  # Ubuntu 22.04 LTS — us-east-1
+key_pair_name        = "digitaltwin-key"
+
+# IMPORTANT: Change this to your actual public IP for security!
+# Find your IP: curl ifconfig.me
+your_ip_cidr = "0.0.0.0/0"
