@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.digitaltwin.cluster_sync_service.dto.SecretInfo;
+import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeInfo;
+import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeClaimInfo;
 import java.util.List;
 
 @RestController
@@ -69,4 +71,25 @@ public class KubernetesController {
     public List<ConfigMapInfo> getAllConfigMaps() throws ApiException {
         return kubernetesDiscoveryService.getAllConfigMaps();
     }
+    // ==========================
+    // Get All Secrets
+    // ==========================
+    @GetMapping("/secrets")
+    public List<SecretInfo> getAllSecrets() throws ApiException {
+    return kubernetesDiscoveryService.getAllSecrets();
+}
+// ==========================
+// Get All Persistent Volumes
+// ==========================
+@GetMapping("/persistent-volumes")
+public List<PersistentVolumeInfo> getAllPersistentVolumes() throws ApiException {
+    return kubernetesDiscoveryService.getAllPersistentVolumes();
+}
+// ==========================
+// Get All Persistent Volume Claims
+// ==========================
+@GetMapping("/persistent-volume-claims")
+public List<PersistentVolumeClaimInfo> getAllPersistentVolumeClaims() throws ApiException {
+    return kubernetesDiscoveryService.getAllPersistentVolumeClaims();
+}
 }

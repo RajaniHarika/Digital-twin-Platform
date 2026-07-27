@@ -13,6 +13,9 @@ import io.kubernetes.client.openapi.models.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.digitaltwin.cluster_sync_service.dto.ConfigMapInfo;
+import com.digitaltwin.cluster_sync_service.dto.SecretInfo;
+import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeInfo;
+import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeClaimInfo;
 
 
 import java.util.ArrayList;
@@ -318,5 +321,193 @@ public List<ConfigMapInfo> getAllConfigMaps() throws ApiException {
     }
 
     return configMaps;
+}
+// ==========================
+// Get All Kubernetes Secrets
+// ==========================
+public List<SecretInfo> getAllSecrets() throws ApiException {
+
+    CoreV1Api api = new CoreV1Api(apiClient);
+
+    V1SecretList secretList = api
+            .listSecretForAllNamespaces()
+            .execute();
+
+    List<SecretInfo> secrets = new ArrayList<>();
+
+    for (V1Secret secret : secretList.getItems()) {
+
+        Integer dataCount = 0;
+        String creationTimestamp = "";
+
+        if (secret.getData() != null) {
+            dataCount = secret.getData().size();
+        }
+
+        if (secret.getMetadata() != null &&
+                secret.getMetadata().getCreationTimestamp() != null) {
+
+            creationTimestamp = secret.getMetadata()
+                    .getCreationTimestamp()
+                    .toString();
+        }
+
+        secrets.add(
+                SecretInfo.builder()
+                        .name(secret.getMetadata().getName())
+                        .namespace(secret.getMetadata().getNamespace())
+                        .type(secret.getType())
+                        .dataCount(dataCount)
+                        .creationTimestamp(creationTimestamp)
+                        .build()
+        );
+    }
+
+    return secrets;
+}
+// ==========================
+// Get All Persistent Volumes
+// ==========================
+public List<PersistentVolumeInfo> getAllPersistentVolumes() throws ApiException {
+
+    CoreV1Api api = new CoreV1Api(apiClient);
+
+    V1PersistentVolumeList pvList = api
+            .listPersistentVolume()
+            .execute();
+
+    List<PersistentVolumeInfo> persistentVolumes = new ArrayList<>();
+
+    for (V1PersistentVolume pv : pvList.getItems()) {
+
+        String capacity = "";
+        String accessMode = "";
+        String reclaimPolicy = "";
+        String status = "";
+        String storageClass = "";
+        String claim = "Unbound";
+
+        if (pv.getSpec() != null) {
+
+            if (pv.getSpec().getCapacity() != null &&
+                    pv.getSpec().getCapacity().containsKey("storage")) {
+
+                capacity = pv.getSpec()
+                        .getCapacity()
+                        .get("storage")
+                        .toSuffixedString();
+            }
+
+            if (pv.getSpec().getAccessModes() != null &&
+                    !pv.getSpec().getAccessModes().isEmpty()) {
+
+                accessMode = String.join(",",
+                        pv.getSpec().getAccessModes());
+            }
+
+            if (pv.getSpec().getPersistentVolumeReclaimPolicy() != null) {
+                reclaimPolicy =
+                        pv.getSpec().getPersistentVolumeReclaimPolicy();
+            }
+
+            if (pv.getSpec().getStorageClassName() != null) {
+                storageClass = pv.getSpec().getStorageClassName();
+            }
+
+            if (pv.getSpec().getClaimRef() != null) {
+
+                claim = pv.getSpec().getClaimRef().getNamespace()
+                        + "/"
+                        + pv.getSpec().getClaimRef().getName();
+            }
+        }
+
+        if (pv.getStatus() != null &&
+                pv.getStatus().getPhase() != null) {
+
+            status = pv.getStatus().getPhase();
+        }
+
+        persistentVolumes.add(
+                PersistentVolumeInfo.builder()
+                        .name(pv.getMetadata().getName())
+                        .capacity(capacity)
+                        .accessMode(accessMode)
+                        .reclaimPolicy(reclaimPolicy)
+                        .status(status)
+                        .storageClass(storageClass)
+                        .claim(claim)
+                        .build()
+        );
+    }
+
+    return persistentVolumes;
+}
+// ==========================
+// Get All Persistent Volume Claims
+// ==========================
+public List<PersistentVolumeClaimInfo> getAllPersistentVolumeClaims() throws ApiException {
+
+    CoreV1Api api = new CoreV1Api(apiClient);
+
+    V1PersistentVolumeClaimList pvcList = api
+            .listPersistentVolumeClaimForAllNamespaces()
+            .execute();
+
+    List<PersistentVolumeClaimInfo> persistentVolumeClaims = new ArrayList<>();
+
+    for (V1PersistentVolumeClaim pvc : pvcList.getItems()) {
+
+        String status = "";
+        String volume = "";
+        String storageClass = "";
+        String requestedStorage = "";
+        String accessMode = "";
+
+        if (pvc.getStatus() != null && pvc.getStatus().getPhase() != null) {
+            status = pvc.getStatus().getPhase();
+        }
+
+        if (pvc.getSpec() != null) {
+
+            if (pvc.getSpec().getVolumeName() != null) {
+                volume = pvc.getSpec().getVolumeName();
+            }
+
+            if (pvc.getSpec().getStorageClassName() != null) {
+                storageClass = pvc.getSpec().getStorageClassName();
+            }
+
+            if (pvc.getSpec().getAccessModes() != null &&
+                    !pvc.getSpec().getAccessModes().isEmpty()) {
+                accessMode = String.join(",", pvc.getSpec().getAccessModes());
+            }
+
+            if (pvc.getSpec().getResources() != null &&
+                    pvc.getSpec().getResources().getRequests() != null &&
+                    pvc.getSpec().getResources().getRequests().containsKey("storage")) {
+
+                requestedStorage = pvc.getSpec()
+                        .getResources()
+                        .getRequests()
+                        .get("storage")
+                        .toSuffixedString();
+            }
+        }
+
+        persistentVolumeClaims.add(
+                PersistentVolumeClaimInfo.builder()
+                        .name(pvc.getMetadata().getName())
+                        .namespace(pvc.getMetadata().getNamespace())
+                        .status(status)
+                        .volume(volume)
+                        .storageClass(storageClass)
+                        .requestedStorage(requestedStorage)
+                        .accessMode(accessMode)
+                        .build()
+        );
+    }
+
+    return persistentVolumeClaims;
 }
 }
