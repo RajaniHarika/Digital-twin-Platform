@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to deploy infrastructure in"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-south-1"
 }
 
 variable "environment" {
@@ -31,7 +31,7 @@ variable "public_subnet_cidrs" {
 variable "availability_zones" {
   description = "Availability Zones to deploy subnets into"
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default     = ["ap-south-1a", "ap-south-1b"]
 }
 
 variable "master_instance_type" {
@@ -59,9 +59,9 @@ variable "worker_volume_size" {
 }
 
 variable "ubuntu_ami" {
-  description = "Ubuntu 22.04 LTS AMI ID for us-east-1"
+  description = "Ubuntu 22.04 LTS AMI ID for ap-south-1"
   type        = string
-  default     = "ami-0c7217cdde317cfec"
+  default     = "ami-03f4878755434977f"
 }
 
 variable "key_pair_name" {
