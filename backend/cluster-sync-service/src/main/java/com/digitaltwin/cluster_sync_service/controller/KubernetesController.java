@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.digitaltwin.cluster_sync_service.dto.SecretInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeClaimInfo;
+import com.digitaltwin.cluster_sync_service.dto.EventInfo;
 import java.util.List;
 
 @RestController
@@ -91,5 +92,12 @@ public List<PersistentVolumeInfo> getAllPersistentVolumes() throws ApiException 
 @GetMapping("/persistent-volume-claims")
 public List<PersistentVolumeClaimInfo> getAllPersistentVolumeClaims() throws ApiException {
     return kubernetesDiscoveryService.getAllPersistentVolumeClaims();
+}
+// ==========================
+// Get All Kubernetes Events
+// ==========================
+@GetMapping("/events")
+public List<EventInfo> getAllEvents() throws ApiException {
+    return kubernetesDiscoveryService.getAllEvents();
 }
 }

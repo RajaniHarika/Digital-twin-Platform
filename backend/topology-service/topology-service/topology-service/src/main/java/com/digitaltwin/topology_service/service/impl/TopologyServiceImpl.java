@@ -3,6 +3,7 @@ package com.digitaltwin.topology_service.service.impl;
 import com.digitaltwin.topology_service.dto.DeploymentDto;
 import com.digitaltwin.topology_service.dto.NodeDto;
 import com.digitaltwin.topology_service.dto.PodDto;
+import com.digitaltwin.topology_service.dto.ServiceDto;
 import com.digitaltwin.topology_service.service.TopologyService;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -11,6 +12,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -129,6 +131,43 @@ public class TopologyServiceImpl implements TopologyService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to fetch Kubernetes deployments", e);
+        }
+    }
+
+    @Override
+    public List<ServiceDto> getAllServices() {
+
+        List<ServiceDto> services = new ArrayList<>();
+
+        try {
+
+            List<V1Service> serviceList = coreV1Api
+                    .listServiceForAllNamespaces()
+                    .execute()
+                    .getItems();
+
+            for (V1Service service : serviceList) {
+
+                String clusterIP = "N/A";
+
+                if (service.getSpec() != null &&
+                        service.getSpec().getClusterIP() != null) {
+                    clusterIP = service.getSpec().getClusterIP();
+                }
+
+                services.add(new ServiceDto(
+                        service.getMetadata().getName(),
+                        service.getMetadata().getNamespace(),
+                        service.getSpec().getType(),
+                        clusterIP
+                ));
+            }
+
+            return services;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch Kubernetes services", e);
         }
     }
 }

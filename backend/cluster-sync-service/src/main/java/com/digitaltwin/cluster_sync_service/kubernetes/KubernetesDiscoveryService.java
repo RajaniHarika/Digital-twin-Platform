@@ -16,7 +16,7 @@ import com.digitaltwin.cluster_sync_service.dto.ConfigMapInfo;
 import com.digitaltwin.cluster_sync_service.dto.SecretInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeClaimInfo;
-
+import com.digitaltwin.cluster_sync_service.dto.EventInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -509,5 +509,50 @@ public List<PersistentVolumeClaimInfo> getAllPersistentVolumeClaims() throws Api
     }
 
     return persistentVolumeClaims;
+}
+// ==========================
+// Get All Kubernetes Events
+// ==========================
+public List<EventInfo> getAllEvents() throws ApiException {
+
+    CoreV1Api api = new CoreV1Api(apiClient);
+
+    CoreV1EventList eventList = api
+            .listEventForAllNamespaces()
+            .execute();
+
+    List<EventInfo> events = new ArrayList<>();
+
+    for (CoreV1Event event : eventList.getItems()) {
+
+        String objectName = "";
+        String objectKind = "";
+        String eventTime = "";
+
+        if (event.getInvolvedObject() != null) {
+            objectName = event.getInvolvedObject().getName();
+            objectKind = event.getInvolvedObject().getKind();
+        }
+
+        if (event.getEventTime() != null) {
+            eventTime = event.getEventTime().toString();
+        } else if (event.getLastTimestamp() != null) {
+            eventTime = event.getLastTimestamp().toString();
+        }
+
+        events.add(
+                EventInfo.builder()
+                        .namespace(event.getMetadata().getNamespace())
+                        .objectName(objectName)
+                        .objectKind(objectKind)
+                        .reason(event.getReason())
+                        .type(event.getType())
+                        .message(event.getMessage())
+                        .eventTime(eventTime)
+                        .build()
+        );
+    }
+
+    return events;
 }
 }
