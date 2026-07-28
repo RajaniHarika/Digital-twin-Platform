@@ -17,6 +17,8 @@ import com.digitaltwin.cluster_sync_service.dto.SecretInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeClaimInfo;
 import com.digitaltwin.cluster_sync_service.dto.EventInfo;
+import com.digitaltwin.cluster_sync_service.dto.IngressInfo;
+import io.kubernetes.client.openapi.apis.NetworkingV1Api;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -554,5 +556,64 @@ public List<EventInfo> getAllEvents() throws ApiException {
     }
 
     return events;
+}
+// ==========================
+// Get All Kubernetes Ingresses
+// ==========================
+public List<IngressInfo> getAllIngresses() throws ApiException {
+
+    NetworkingV1Api api = new NetworkingV1Api(apiClient);
+
+    V1IngressList ingressList = api
+            .listIngressForAllNamespaces()
+            .execute();
+
+    List<IngressInfo> ingresses = new ArrayList<>();
+
+    for (V1Ingress ingress : ingressList.getItems()) {
+
+        String host = "";
+        String path = "";
+        String ingressClass = "";
+
+        if (ingress.getSpec() != null) {
+
+            if (ingress.getSpec().getIngressClassName() != null) {
+                ingressClass = ingress.getSpec().getIngressClassName();
+            }
+
+            if (ingress.getSpec().getRules() != null &&
+                    !ingress.getSpec().getRules().isEmpty()) {
+
+                V1IngressRule rule = ingress.getSpec().getRules().get(0);
+
+                if (rule.getHost() != null) {
+                    host = rule.getHost();
+                }
+
+                if (rule.getHttp() != null &&
+                        rule.getHttp().getPaths() != null &&
+                        !rule.getHttp().getPaths().isEmpty()) {
+
+                    path = rule.getHttp()
+                            .getPaths()
+                            .get(0)
+                            .getPath();
+                }
+            }
+        }
+
+        ingresses.add(
+                IngressInfo.builder()
+                        .name(ingress.getMetadata().getName())
+                        .namespace(ingress.getMetadata().getNamespace())
+                        .host(host)
+                        .path(path)
+                        .ingressClass(ingressClass)
+                        .build()
+        );
+    }
+
+    return ingresses;
 }
 }

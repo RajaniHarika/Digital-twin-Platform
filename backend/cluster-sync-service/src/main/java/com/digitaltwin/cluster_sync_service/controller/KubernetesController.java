@@ -16,6 +16,7 @@ import com.digitaltwin.cluster_sync_service.dto.SecretInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeInfo;
 import com.digitaltwin.cluster_sync_service.dto.PersistentVolumeClaimInfo;
 import com.digitaltwin.cluster_sync_service.dto.EventInfo;
+import com.digitaltwin.cluster_sync_service.dto.IngressInfo;
 import java.util.List;
 
 @RestController
@@ -99,5 +100,12 @@ public List<PersistentVolumeClaimInfo> getAllPersistentVolumeClaims() throws Api
 @GetMapping("/events")
 public List<EventInfo> getAllEvents() throws ApiException {
     return kubernetesDiscoveryService.getAllEvents();
+}
+// ==========================
+// Get All Kubernetes Ingresses
+// ==========================
+@GetMapping("/ingresses")
+public List<IngressInfo> getAllIngresses() throws ApiException {
+    return kubernetesDiscoveryService.getAllIngresses();
 }
 }
