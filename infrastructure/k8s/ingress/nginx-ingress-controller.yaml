@@ -1,0 +1,38 @@
+## ──────────────────────────────────────────────────────────────
+## Nginx Ingress Controller — NodePort Installation
+## ──────────────────────────────────────────────────────────────
+## This deploys the Nginx Ingress Controller into the
+## "ingress-nginx" namespace. It listens on NodePort 30080 (HTTP)
+## on the Worker node public IP, and internally proxies traffic to
+## your app services based on the Ingress rules in ingress.yaml.
+##
+## HOW TO INSTALL:
+##   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/baremetal/deploy.yaml
+##   kubectl apply -f nginx-ingress-controller.yaml  (applies the NodePort patch below)
+##
+## This file patches the default Nginx service to pin NodePort 30080 for HTTP.
+## ──────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: controller
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/component: controller
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080       # Public access: <Worker-Public-IP>:30080
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      nodePort: 30443       # Reserved for future TLS (HTTPS) support
+      protocol: TCP
