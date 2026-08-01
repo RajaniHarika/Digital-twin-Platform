@@ -1,121 +1,116 @@
-/**
- * Mock Authentication Service for DevOps Digital Twin Platform.
- * Designed to mimic an asynchronous JWT-based authentication flow.
- * Can be easily swapped with a Spring Boot REST API client.
- */
+import { getApiBaseUrl } from './config';
+import { canAccessRoute as checkRouteAccess, ROUTE_ROLES } from '../utils/navigation';
 
-const PREDEFINED_USERS = {
-  'admin@digitaltwin.com': { password: 'admin123', role: 'Admin', name: 'System Admin' },
-  'devops@digitaltwin.com': { password: 'devops123', role: 'DevOps Engineer', name: 'DevOps Lead' },
-  'backend@digitaltwin.com': { password: 'backend123', role: 'Backend Engineer', name: 'Backend Dev' },
-  'cloud@digitaltwin.com': { password: 'cloud123', role: 'Cloud Engineer', name: 'Cloud Architect' },
-  'sre@digitaltwin.com': { password: 'sre123', role: 'Site Reliability Engineer (SRE)', name: 'SRE Lead' },
-  'manager@digitaltwin.com': { password: 'manager123', role: 'Project Manager', name: 'Project Manager' },
+const AUTH_URL = getApiBaseUrl();
+
+const AUTH_KEYS = ['isAuthenticated', 'authToken', 'userEmail', 'userRole', 'userName', 'loginTime'];
+
+const clearAuthStorage = () => {
+  AUTH_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+  sessionStorage.removeItem('loginSuccessSnackbar');
+};
+
+const getStorage = () => (localStorage.getItem('authToken') ? localStorage : sessionStorage);
+
+const persistUser = (user, storage) => {
+  storage.setItem('userEmail', user.email);
+  storage.setItem('userRole', user.role);
+  storage.setItem('userName', user.name);
+};
+
+const notifyAuthChange = () => {
+  window.dispatchEvent(new Event('auth:changed'));
 };
 
 export const authService = {
-  /**
-   * Authenticates the user with email, password, and selected role.
-   * @param {string} email 
-   * @param {string} password 
-   * @param {string} role 
-   * @param {boolean} rememberMe 
-   * @returns {Promise<{ success: boolean, user: object }>}
-   */
   login: async (email, password, role, rememberMe) => {
-    // Simulate network delay to mimic an actual API request
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const response = await fetch(`${AUTH_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role }),
+    });
 
-    const normalizedEmail = email?.toLowerCase().trim();
-    const user = PREDEFINED_USERS[normalizedEmail];
-
-    // Support SRE naming variations between dropdown ("Site Reliability Engineer (SRE)") and specs ("SRE Engineer")
-    const isSreMatch = 
-      (normalizedEmail === 'sre@digitaltwin.com') && 
-      (role === 'Site Reliability Engineer (SRE)' || role === 'SRE Engineer');
-
-    const roleMatches = user && (user.role === role || isSreMatch);
-
-    if (!user || user.password !== password || !roleMatches) {
-      throw new Error('Invalid email, password, or role.');
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Invalid email, password, or role.');
     }
 
-    // Set temporary login flag to trigger success Snackbar after redirect
+    const { token, user } = await response.json();
+    clearAuthStorage();
+
+    const storage = rememberMe ? localStorage : sessionStorage;
     sessionStorage.setItem('loginSuccessSnackbar', 'true');
     sessionStorage.setItem('sessionActive', 'true');
-
-    // Store auth info in localStorage
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('authToken', 'mock-jwt-token');
-    localStorage.setItem('userEmail', normalizedEmail);
-    localStorage.setItem('userRole', user.role); // Store standard role
-    localStorage.setItem('userName', user.name);
-    localStorage.setItem('loginTime', new Date().toISOString());
+    storage.setItem('isAuthenticated', 'true');
+    storage.setItem('authToken', token);
+    persistUser(user, storage);
+    storage.setItem('loginTime', new Date().toISOString());
     localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
 
-    return {
-      success: true,
-      user: {
-        email: normalizedEmail,
-        role: user.role,
-        name: user.name,
-      },
-    };
+    notifyAuthChange();
+    return { success: true, user };
   },
 
-  /**
-   * Logs out the current user and clears session state.
-   */
   logout: () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('loginTime');
+    clearAuthStorage();
     localStorage.removeItem('rememberMe');
-    sessionStorage.removeItem('loginSuccessSnackbar');
+    notifyAuthChange();
   },
 
-  /**
-   * Checks if a user is currently authenticated.
-   * @returns {boolean}
-   */
-  isAuthenticated: () => {
-    return localStorage.getItem('isAuthenticated') === 'true' && !!localStorage.getItem('authToken');
-  },
+  getToken: () => localStorage.getItem('authToken') || sessionStorage.getItem('authToken'),
 
-  /**
-   * Gets the details of the currently logged-in user.
-   * @returns {object|null}
-   */
+  isAuthenticated: () =>
+    !!authService.getToken() &&
+    (localStorage.getItem('isAuthenticated') === 'true' || sessionStorage.getItem('isAuthenticated') === 'true'),
+
   getCurrentUser: () => {
     if (!authService.isAuthenticated()) return null;
+    const storage = getStorage();
     return {
-      email: localStorage.getItem('userEmail'),
-      role: localStorage.getItem('userRole'),
-      name: localStorage.getItem('userName') || localStorage.getItem('userRole') || 'User',
-      loginTime: localStorage.getItem('loginTime'),
+      email: storage.getItem('userEmail'),
+      role: storage.getItem('userRole'),
+      name: storage.getItem('userName') || storage.getItem('userRole') || 'User',
+      loginTime: storage.getItem('loginTime'),
     };
   },
 
-  /**
-   * Initializes the authentication state.
-   * If rememberMe was unchecked and sessionActive is missing (indicating browser restart), logs out the user.
-   */
   init: () => {
-    const isAuth = localStorage.getItem('isAuthenticated') === 'true';
-    const remember = localStorage.getItem('rememberMe') === 'true';
-    const hasActiveSession = sessionStorage.getItem('sessionActive') === 'true';
-
-    if (isAuth && !remember && !hasActiveSession) {
-      // Unremembered user reopened browser -> clear credentials
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    if (!rememberMe && !sessionStorage.getItem('authToken') && localStorage.getItem('isAuthenticated') === 'true') {
       authService.logout();
+      return;
     }
-
-    // Always mark current tab session as active
-    sessionStorage.setItem('sessionActive', 'true');
+    if (authService.isAuthenticated()) {
+      sessionStorage.setItem('sessionActive', 'true');
+    }
   },
+
+  verifyToken: async () => {
+    const token = authService.getToken();
+    if (!token) return false;
+    try {
+      const res = await fetch(`${AUTH_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Invalid token');
+      const user = await res.json();
+      if (user?.email) {
+        const storage = getStorage();
+        persistUser(user, storage);
+      }
+      return true;
+    } catch {
+      authService.logout();
+      return false;
+    }
+  },
+
+  canAccessRoute: (path, role) => checkRouteAccess(path, role),
 };
+
+export { ROUTE_ROLES };
 
 export default authService;

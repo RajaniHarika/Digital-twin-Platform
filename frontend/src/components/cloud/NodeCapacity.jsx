@@ -3,10 +3,11 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead
 import { Dns, CheckCircle, Warning, Cancel } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import CloudCard from './CloudCard';
+import { useAppTheme } from '../../theme/useAppTheme';
 
-const CapacityBar = ({ value, colorHex }) => (
+const CapacityBar = ({ value, colorHex, tokens }) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-    <Box sx={{ flex: 1, height: 6, bgcolor: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+    <Box sx={{ flex: 1, height: 6, bgcolor: tokens.surface, borderRadius: 3, overflow: 'hidden' }}>
       <Box
         sx={{
           height: '100%',
@@ -17,14 +18,14 @@ const CapacityBar = ({ value, colorHex }) => (
         }}
       />
     </Box>
-    <Typography sx={{ color: '#64748B', fontSize: '0.65rem', fontWeight: 600, width: 28, textAlign: 'right' }}>
+    <Typography sx={{ color: tokens.textLabel, fontSize: '0.65rem', fontWeight: 600, width: 28, textAlign: 'right' }}>
       {value}%
     </Typography>
   </Box>
 );
 
 const STATUS_CONFIG = {
-  running: { label: 'Running', bgColor: '#DCFCE7', textColor: '#15803D', dotColor: '#22C55E' },
+  running: { label: 'Running', bgColor: '#ECFFB6', textColor: '#94C600', dotColor: '#C7FF3A' },
   warning: { label: 'Warning', bgColor: '#FEF3C7', textColor: '#92400E', dotColor: '#F59E0B' },
   stopped: { label: 'Stopped', bgColor: '#FEE2E2', textColor: '#991B1B', dotColor: '#EF4444' },
 };
@@ -54,7 +55,7 @@ const StatusChip = ({ status }) => {
   );
 };
 
-const SummaryCard = ({ icon, label, count, colorHex, delay = 0 }) => (
+const SummaryCard = ({ icon, label, count, colorHex, delay = 0, tokens }) => (
   <Box
     component={motion.div}
     initial={{ opacity: 0, y: 6 }}
@@ -65,7 +66,7 @@ const SummaryCard = ({ icon, label, count, colorHex, delay = 0 }) => (
       alignItems: 'center',
       gap: 1.5,
       p: 1.5,
-      borderRadius: '12px',
+      borderRadius: `${tokens.radii.xl}px`,
       bgcolor: `${colorHex}08`,
       border: `1px solid ${colorHex}20`,
     }}
@@ -84,10 +85,10 @@ const SummaryCard = ({ icon, label, count, colorHex, delay = 0 }) => (
       {React.cloneElement(icon, { sx: { color: colorHex, fontSize: 18 } })}
     </Box>
     <Box>
-      <Typography sx={{ color: '#0F172A', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.1 }}>
+      <Typography sx={{ color: tokens.text, fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.1 }}>
         {count}
       </Typography>
-      <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <Typography sx={{ color: tokens.textLabel, fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </Typography>
     </Box>
@@ -95,6 +96,7 @@ const SummaryCard = ({ icon, label, count, colorHex, delay = 0 }) => (
 );
 
 const NodeCapacity = ({ data }) => {
+  const { tokens } = useAppTheme();
   const totalNodes = data.length;
   const healthyNodes = data.filter((n) => n.state === 'running').length;
   const warningNodes = data.filter((n) => n.state === 'warning').length;
@@ -102,31 +104,29 @@ const NodeCapacity = ({ data }) => {
 
   return (
     <CloudCard title="Node Capacity">
-      {/* Summary Statistics */}
       <Box sx={{ mb: 2.5 }}>
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryCard icon={<Dns />} label="Total Nodes" count={totalNodes} colorHex="#3B82F6" delay={0} />
+            <SummaryCard icon={<Dns />} label="Total Nodes" count={totalNodes} colorHex={tokens.textLabel} tokens={tokens} delay={0} />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryCard icon={<CheckCircle />} label="Healthy" count={healthyNodes} colorHex="#22C55E" delay={0.05} />
+            <SummaryCard icon={<CheckCircle />} label="Healthy" count={healthyNodes} colorHex="#22C55E" tokens={tokens} delay={0.05} />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryCard icon={<Warning />} label="Warning" count={warningNodes} colorHex="#F59E0B" delay={0.1} />
+            <SummaryCard icon={<Warning />} label="Warning" count={warningNodes} colorHex="#F59E0B" tokens={tokens} delay={0.1} />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <SummaryCard icon={<Cancel />} label="Offline" count={offlineNodes} colorHex="#EF4444" delay={0.15} />
+            <SummaryCard icon={<Cancel />} label="Offline" count={offlineNodes} colorHex="#EF4444" tokens={tokens} delay={0.15} />
           </Grid>
         </Grid>
       </Box>
 
-      {/* Node Table */}
       <TableContainer
         sx={{
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
+          borderRadius: `${tokens.radii.xl}px`,
+          border: `1px solid ${tokens.border}`,
           '&::-webkit-scrollbar': { width: 4, height: 4 },
-          '&::-webkit-scrollbar-thumb': { bgcolor: '#E2E8F0', borderRadius: 2 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: tokens.surface, borderRadius: 2 },
         }}
       >
         <Table size="small">
@@ -136,9 +136,9 @@ const NodeCapacity = ({ data }) => {
                 <TableCell
                   key={h}
                   sx={{
-                    bgcolor: '#F8FAFC',
-                    color: '#94A3B8',
-                    borderBottom: '1px solid #E2E8F0',
+                    bgcolor: tokens.surfaceMuted,
+                    color: tokens.textMuted,
+                    borderBottom: `1px solid ${tokens.border}`,
                     py: 1.5,
                     px: 2,
                     fontWeight: 600,
@@ -158,12 +158,12 @@ const NodeCapacity = ({ data }) => {
                 key={node.id}
                 sx={{
                   transition: 'background-color 0.15s',
-                  '&:hover': { bgcolor: '#F8FAFC' },
-                  '& td': { borderBottom: '1px solid #F1F5F9', py: 1.5, px: 2 },
+                  '&:hover': { bgcolor: tokens.surfaceHover },
+                  '& td': { borderBottom: `1px solid ${tokens.border}`, py: 1.5, px: 2 },
                 }}
               >
                 <TableCell>
-                  <Typography sx={{ color: '#0F172A', fontWeight: 600, fontSize: '0.75rem', fontFamily: '"JetBrains Mono", monospace' }}>
+                  <Typography sx={{ color: tokens.text, fontWeight: 600, fontSize: '0.75rem', fontFamily: '"JetBrains Mono", monospace' }}>
                     {node.id}
                   </Typography>
                 </TableCell>
@@ -171,16 +171,16 @@ const NodeCapacity = ({ data }) => {
                   <StatusChip status={node.state} />
                 </TableCell>
                 <TableCell sx={{ minWidth: 100 }}>
-                  <CapacityBar value={node.cpu} colorHex="#3B82F6" />
+                  <CapacityBar value={node.cpu} colorHex={tokens.textLabel} tokens={tokens} />
                 </TableCell>
                 <TableCell sx={{ minWidth: 100 }}>
-                  <CapacityBar value={node.memory} colorHex="#8B5CF6" />
+                  <CapacityBar value={node.memory} colorHex={tokens.textLabel} tokens={tokens} />
                 </TableCell>
                 <TableCell sx={{ minWidth: 100 }}>
-                  <CapacityBar value={node.storage} colorHex="#10B981" />
+                  <CapacityBar value={node.storage} colorHex="#94C600" tokens={tokens} />
                 </TableCell>
                 <TableCell sx={{ minWidth: 100 }}>
-                  <CapacityBar value={node.network} colorHex="#F59E0B" />
+                  <CapacityBar value={node.network} colorHex="#F59E0B" tokens={tokens} />
                 </TableCell>
               </TableRow>
             ))}

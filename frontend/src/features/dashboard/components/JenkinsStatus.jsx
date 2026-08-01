@@ -2,72 +2,67 @@ import React from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import DashboardCard from './DashboardCard';
 import StatusBadge from './StatusBadge';
+import { useAppTheme } from '../../../theme/useAppTheme';
+
+const PipelineCard = ({ pipeline, tokens }) => {
+  const rateColor = pipeline.successRate > 90 ? '#22C55E' : pipeline.successRate > 75 ? '#F59E0B' : '#EF4444';
+
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: '10px',
+        border: `1px solid ${tokens.border}`,
+        bgcolor: tokens.surfaceMuted,
+        height: '100%',
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, gap: 1 }}>
+        <Typography sx={{ color: tokens.text, fontWeight: 600, fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {pipeline.name}
+        </Typography>
+        <StatusBadge status={pipeline.status} />
+      </Box>
+
+      <Grid container spacing={1} sx={{ mb: 1 }}>
+        <Grid size={{ xs: 4 }}>
+          <Typography sx={{ color: tokens.textLabel, fontSize: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>Stage</Typography>
+          <Typography sx={{ color: tokens.textSecondary, fontSize: '0.7rem', fontWeight: 500 }}>{pipeline.stage}</Typography>
+        </Grid>
+        <Grid size={{ xs: 4 }}>
+          <Typography sx={{ color: tokens.textLabel, fontSize: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>Duration</Typography>
+          <Typography sx={{ color: tokens.textSecondary, fontSize: '0.7rem', fontFamily: 'monospace' }}>{pipeline.duration}</Typography>
+        </Grid>
+        <Grid size={{ xs: 4 }}>
+          <Typography sx={{ color: tokens.textLabel, fontSize: '0.55rem', fontWeight: 600, textTransform: 'uppercase' }}>Build</Typography>
+          <Typography sx={{ color: tokens.accentDark, fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 600 }}>{pipeline.lastBuild}</Typography>
+        </Grid>
+      </Grid>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ flex: 1, height: 3, bgcolor: tokens.surface, borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ height: '100%', width: `${pipeline.successRate}%`, bgcolor: rateColor, borderRadius: 2 }} />
+        </Box>
+        <Typography sx={{ color: rateColor, fontSize: '0.65rem', fontWeight: 700, flexShrink: 0 }}>
+          {pipeline.successRate}%
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
 
 const JenkinsStatus = ({ data }) => {
+  const { tokens } = useAppTheme();
+
   return (
-    <DashboardCard title="CI/CD Pipelines">
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {data.map((pipeline) => {
-          const rateColor = pipeline.successRate > 90 ? '#22C55E' : pipeline.successRate > 75 ? '#F59E0B' : '#EF4444';
-
-          return (
-            <Box
-              key={pipeline.id}
-              sx={{
-                p: 2,
-                borderRadius: '12px',
-                border: '1px solid #F1F5F9',
-                transition: 'background-color 0.15s ease',
-                '&:hover': { bgcolor: '#F8FAFC' },
-              }}
-            >
-              {/* Row 1: Name + Status */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Typography sx={{ color: '#0F172A', fontWeight: 600, fontSize: '0.8rem' }}>
-                  {pipeline.name}
-                </Typography>
-                <StatusBadge status={pipeline.status} />
-              </Box>
-
-              {/* Row 2: Metadata */}
-              <Box sx={{ display: 'flex', gap: 3, mb: 1.5 }}>
-                <Box>
-                  <Typography sx={{ color: '#94A3B8', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Stage
-                  </Typography>
-                  <Typography sx={{ color: '#334155', fontSize: '0.75rem', fontWeight: 500, mt: 0.25 }}>{pipeline.stage}</Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ color: '#94A3B8', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Duration
-                  </Typography>
-                  <Typography sx={{ color: '#334155', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 500, mt: 0.25 }}>
-                    {pipeline.duration}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ color: '#94A3B8', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Build
-                  </Typography>
-                  <Typography sx={{ color: '#2563EB', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600, mt: 0.25 }}>
-                    {pipeline.lastBuild}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Row 3: Progress bar */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ flex: 1, height: 4, bgcolor: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
-                  <Box sx={{ height: '100%', width: `${pipeline.successRate}%`, bgcolor: rateColor, borderRadius: 2 }} />
-                </Box>
-                <Typography sx={{ color: rateColor, fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
-                  {pipeline.successRate}%
-                </Typography>
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
+    <DashboardCard title="CI/CD Pipelines" compact>
+      <Grid container spacing={1}>
+        {data?.map((pipeline) => (
+          <Grid key={pipeline.id} size={{ xs: 12, sm: 6 }}>
+            <PipelineCard pipeline={pipeline} tokens={tokens} />
+          </Grid>
+        ))}
+      </Grid>
     </DashboardCard>
   );
 };

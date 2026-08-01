@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Grid } from '@mui/material';
-
-// Mock Data
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Grid, Alert, Button } from '@mui/material';
+import { Refresh } from '@mui/icons-material';
+import { dashboardApi } from '../../services/api';
 import { cloudMockData } from '../../data/cloudMockData';
-
-// Components
 import { PageSkeleton } from '../LoadingSkeleton';
 import CloudHeader from './CloudHeader';
 import KpiCards from './KpiCards';
@@ -17,47 +15,49 @@ import NetworkTraffic from './NetworkTraffic';
 const CloudDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [usingMock, setUsingMock] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await dashboardApi.getCloudDashboard();
+      setData(res.data || cloudMockData);
+      setUsingMock(res.source === 'mock');
+    } catch {
+      setData(cloudMockData);
+      setUsingMock(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Simulate API fetch delay
-    const timer = setTimeout(() => {
-      setData(cloudMockData);
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   if (loading || !data) {
     return (
-      <Box sx={{ bgcolor: '#F5F7FA', minHeight: '100vh', p: { xs: 2, md: 4 } }}>
+      <Box sx={{ bgcolor: 'background.default', p: { xs: 2, md: 3 } }}>
         <PageSkeleton />
       </Box>
     );
   }
 
   return (
-    <Box
-      sx={{
-        bgcolor: '#F5F7FA',
-        minHeight: '100vh',
-        py: { xs: 2, md: 3 },
-        px: { xs: 2, md: 3, lg: 4 },
-      }}
-    >
-      <Box sx={{ maxWidth: 1600, mx: 'auto' }}>
-        
-        {/* Header Section */}
-        <Box sx={{ mb: 3 }}>
-          <CloudHeader data={data.header} />
+    <Box sx={{ bgcolor: 'background.default', py: { xs: 1.5, md: 2 }, px: { xs: 1.5, md: 2 } }}>
+      <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
+        {usingMock && (
+          <Alert severity="info" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
+            Using cached cloud data. Connect the backend for live metrics.
+          </Alert>
+        )}
+        <Box sx={{ mb: 2 }}>
+          <CloudHeader data={data.header} onRefresh={fetchData} />
         </Box>
-
-        {/* KPI Cards */}
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 2 }}>
           <KpiCards data={data.kpis} />
         </Box>
-
-        {/* Resource Utilization + Node Capacity */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 2, alignItems: 'flex-start' }}>
           <Grid size={{ xs: 12, lg: 4 }}>
             <ResourceUtilization data={data.resourceUtilization} />
           </Grid>
@@ -65,9 +65,7 @@ const CloudDashboard = () => {
             <NodeCapacity data={data.nodeCapacity} />
           </Grid>
         </Grid>
-
-        {/* Cost Analysis + Storage Usage */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 2, alignItems: 'flex-start' }}>
           <Grid size={{ xs: 12, lg: 7 }}>
             <CostAnalysis data={data.costAnalysis} />
           </Grid>
@@ -75,14 +73,11 @@ const CloudDashboard = () => {
             <StorageUsage data={data.storageUsage} />
           </Grid>
         </Grid>
-
-        {/* Network Traffic */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={2}>
           <Grid size={{ xs: 12 }}>
             <NetworkTraffic data={data.networkTraffic} />
           </Grid>
         </Grid>
-
       </Box>
     </Box>
   );

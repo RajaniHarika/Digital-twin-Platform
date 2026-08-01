@@ -1,48 +1,29 @@
-import { Box, Typography, Button, alpha } from '@mui/material';
-import { FolderOpen, Add } from '@mui/icons-material';
+import { Box, Typography, Button } from '@mui/material';
+import { InboxOutlined, Refresh } from '@mui/icons-material';
 
-const EmptyState = ({
-  title = 'No Data Found',
-  description,
-  action,
-  actionLabel,
-  icon,
-}) => (
+const EmptyState = ({ title = 'No data available', description, actionLabel, onAction, icon }) => (
   <Box
     sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 300,
-      p: 4,
+      py: 6,
+      px: 3,
+      textAlign: 'center',
+      borderRadius: 3,
+      border: (theme) => `1px dashed ${theme.palette.divider}`,
+      bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(17,17,17,0.02)'),
     }}
   >
-    <Box
-      sx={{
-        p: 3,
-        borderRadius: '50%',
-        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-        mb: 2,
-      }}
-    >
-      {icon || <FolderOpen sx={{ fontSize: 64, color: 'primary.main' }} />}
-    </Box>
-    <Typography variant="h6" gutterBottom color="text.primary">
+    {icon || <InboxOutlined sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />}
+    <Typography variant="h6" fontWeight={600} gutterBottom>
       {title}
     </Typography>
     {description && (
-      <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3, maxWidth: 400 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', mb: 2 }}>
         {description}
       </Typography>
     )}
-    {action && (
-      <Button
-        variant="contained"
-        startIcon={<Add />}
-        onClick={action}
-      >
-        {actionLabel || 'Add Item'}
+    {actionLabel && onAction && (
+      <Button variant="outlined" startIcon={<Refresh />} onClick={onAction}>
+        {actionLabel}
       </Button>
     )}
   </Box>

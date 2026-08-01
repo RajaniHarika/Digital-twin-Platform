@@ -1,18 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  CardHeader,
   Grid,
   Chip,
   IconButton,
   alpha,
   useTheme,
   Tooltip,
-  Tabs,
-  Tab,
   TextField,
   InputAdornment,
   MenuItem,
@@ -20,6 +17,8 @@ import {
   FormControl,
   InputLabel,
   Pagination,
+  Alert,
+  Button,
 } from '@mui/material';
 import {
   History as HistoryIcon,
@@ -38,7 +37,9 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import StatusChip from '../../components/StatusChip';
+import EmptyState from '../../components/EmptyState';
 import { formatDuration, formatDateTime } from '../../utils/formatters';
+import { dashboardApi } from '../../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -50,7 +51,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
 
-const historyItems = [
+const MOCK_HISTORY_ITEMS = [
   { id: 'evt-001', type: 'deployment', title: 'Payment Service v2.3.1 Deployed', status: 'success', service: 'payment-service', user: 'john.doe', timestamp: '2026-07-08T10:30:00Z', duration: 180, details: 'Rolling update completed. 0 errors during rollout.' },
   { id: 'evt-002', type: 'simulation', title: 'Load Test - Order Service', status: 'completed', service: 'order-service', user: 'jane.smith', timestamp: '2026-07-08T09:45:00Z', duration: 120, details: 'Peak throughput: 2,400 req/s. P99 latency: 280ms.' },
   { id: 'evt-003', type: 'deployment', title: 'User Service v3.1.0 Deployed', status: 'success', service: 'user-service', user: 'john.doe', timestamp: '2026-07-07T16:30:00Z', duration: 240, details: 'Blue-green deployment. Canary tests passed.' },
@@ -65,20 +66,54 @@ const historyItems = [
   { id: 'evt-012', type: 'deployment', title: 'Redis Cache v7.2 Upgrade', status: 'success', service: 'redis', user: 'mike.wilson', timestamp: '2026-07-04T16:00:00Z', duration: 45, details: 'In-place upgrade with zero data loss.' },
 ];
 
-const typeConfig = {
-  deployment: { icon: <RocketLaunch />, color: '#1976D2', label: 'Deployment' },
-  simulation: { icon: <Science />, color: '#9C27B0', label: 'Simulation' },
-  incident: { icon: <BugReport />, color: '#D32F2F', label: 'Incident' },
-  config: { icon: <Build />, color: '#ED6C02', label: 'Config Change' },
-};
+const mapHistoryItem = (item) => ({
+  id: item.id,
+  type: item.type,
+  title: item.action,
+  status: item.status,
+  service: item.service || item.type,
+  user: item.user,
+  timestamp: item.timestamp,
+  duration: item.duration ?? 0,
+  details: item.details || item.action,
+});
 
 const History = () => {
   const theme = useTheme();
+  const [historyItems, setHistoryItems] = useState([]);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const itemsPerPage = 6;
+
+  const typeConfig = {
+    deployment: { icon: <RocketLaunch />, color: '#94C600', label: 'Deployment' },
+    simulation: { icon: <Science />, color: theme.palette.text.primary, label: 'Simulation' },
+    incident: { icon: <BugReport />, color: '#EF4444', label: 'Incident' },
+    config: { icon: <Build />, color: '#F59E0B', label: 'Config Change' },
+    risk: { icon: <BugReport />, color: theme.palette.warning.main, label: 'Risk' },
+    cost: { icon: <Build />, color: theme.palette.info.main, label: 'Cost' },
+    topology: { icon: <Build />, color: theme.palette.primary.main, label: 'Topology' },
+  };
+
+  const fetchData = useCallback(async () => {
+    setError(null);
+    try {
+      const res = await dashboardApi.getHistory();
+      const items = (res.data || []).map(mapHistoryItem);
+      setHistoryItems(items);
+    } catch (err) {
+      console.error('History fetch error:', err);
+      setError('Unable to load history data.');
+      setHistoryItems(MOCK_HISTORY_ITEMS);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredItems = historyItems.filter((item) => {
     const matchesSearch = !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.service.toLowerCase().includes(searchQuery.toLowerCase());
@@ -99,7 +134,12 @@ const History = () => {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Box>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
+            {error}
+          </Alert>
+        )}
         {/* Header */}
         <motion.div variants={itemVariants}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -112,7 +152,7 @@ const History = () => {
               </Typography>
             </Box>
             <Tooltip title="Refresh">
-              <IconButton sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
+              <IconButton onClick={fetchData} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
                 <Refresh />
               </IconButton>
             </Tooltip>
@@ -172,6 +212,9 @@ const History = () => {
                     <MenuItem value="simulation">Simulation</MenuItem>
                     <MenuItem value="incident">Incident</MenuItem>
                     <MenuItem value="config">Config</MenuItem>
+                    <MenuItem value="risk">Risk</MenuItem>
+                    <MenuItem value="cost">Cost</MenuItem>
+                    <MenuItem value="topology">Topology</MenuItem>
                   </Select>
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -181,6 +224,8 @@ const History = () => {
                     <MenuItem value="success">Success</MenuItem>
                     <MenuItem value="completed">Completed</MenuItem>
                     <MenuItem value="failed">Failed</MenuItem>
+                    <MenuItem value="warning">Warning</MenuItem>
+                    <MenuItem value="info">Info</MenuItem>
                   </Select>
                 </FormControl>
                 <Chip label={`${filteredItems.length} events`} size="small" variant="outlined" sx={{ ml: 'auto' }} />
@@ -190,6 +235,14 @@ const History = () => {
         </motion.div>
 
         {/* Timeline */}
+        {filteredItems.length === 0 ? (
+          <EmptyState
+            title="No events found"
+            description="Try adjusting your search or filters to find activity history."
+            actionLabel="Refresh"
+            onAction={fetchData}
+          />
+        ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {paginatedItems.map((item) => {
             const config = typeConfig[item.type] || typeConfig.deployment;
@@ -257,9 +310,10 @@ const History = () => {
             );
           })}
         </Box>
+        )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {filteredItems.length > 0 && totalPages > 1 && (
           <motion.div variants={itemVariants}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Pagination

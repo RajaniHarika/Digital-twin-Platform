@@ -15,6 +15,7 @@ export const SidebarProvider = ({ children }) => {
     const saved = localStorage.getItem('sidebarOpen');
     return saved !== null ? saved === 'true' : true;
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggle = useCallback(() => {
     setIsOpen((prev) => {
@@ -33,6 +34,8 @@ export const SidebarProvider = ({ children }) => {
     isOpen,
     toggle,
     setOpen,
+    mobileOpen,
+    setMobileOpen,
   };
 
   return (

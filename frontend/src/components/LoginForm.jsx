@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   TextField,
-  Button,
   FormControl,
   InputLabel,
   Select,
@@ -15,14 +15,12 @@ import {
   Link,
   Typography,
   CircularProgress,
+  OutlinedInput,
 } from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock,
-  Work,
-} from '@mui/icons-material';
+import { Visibility, VisibilityOff, Email, Lock, Work } from '@mui/icons-material';
+import GlowButton from './marketing/GlowButton';
+import { palette, radii } from '../theme/colors';
+import { useAppTheme } from '../theme/useAppTheme';
 
 const ROLES = [
   'DevOps Engineer',
@@ -34,64 +32,51 @@ const ROLES = [
 ];
 
 export const LoginForm = ({ onSubmit, isLoading, apiError }) => {
+  const { tokens } = useAppTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '', role: '' });
 
-  // Validation states
-  const [errors, setErrors] = useState({
-    email: '',
-    password: '',
-    role: '',
-  });
-
-  const handleTogglePassword = () => {
-    setShowPassword((prev) => !prev);
+  const fieldSx = {
+    mb: 3,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: `${radii.lg}px`,
+      bgcolor: tokens.surface,
+      color: tokens.text,
+      '& fieldset': { borderColor: tokens.border },
+      '&:hover fieldset': { borderColor: tokens.textMuted },
+      '&.Mui-focused fieldset': { borderColor: palette.accentDark },
+    },
+    '& .MuiInputLabel-root': { color: tokens.textSecondary },
+    '& .MuiInputLabel-root.Mui-focused': { color: palette.accentDark },
+    '& .MuiFormHelperText-root': { color: tokens.textMuted },
   };
 
   const validateEmail = (val) => {
-    if (!val) {
-      return 'Email address is required.';
-    }
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!regex.test(val)) {
-      return 'Please enter a valid email address.';
-    }
+    if (!val) return 'Email address is required.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Please enter a valid email address.';
     return '';
   };
 
   const validatePassword = (val) => {
-    if (!val) {
-      return 'Password is required.';
-    }
-    if (val.length < 6) {
-      return 'Password must be at least 6 characters.';
-    }
+    if (!val) return 'Password is required.';
+    if (val.length < 6) return 'Password must be at least 6 characters.';
     return '';
   };
 
-  const validateRole = (val) => {
-    if (!val) {
-      return 'Please select your role.';
-    }
-    return '';
-  };
+  const validateRole = (val) => (!val ? 'Please select your role.' : '');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     const emailErr = validateEmail(email);
     const passErr = validatePassword(password);
     const roleErr = validateRole(role);
 
     if (emailErr || passErr || roleErr) {
-      setErrors({
-        email: emailErr,
-        password: passErr,
-        role: roleErr,
-      });
+      setErrors({ email: emailErr, password: passErr, role: roleErr });
       return;
     }
 
@@ -102,51 +87,12 @@ export const LoginForm = ({ onSubmit, isLoading, apiError }) => {
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
       {apiError && (
-        <Alert
-          severity="error"
-          sx={{
-            mb: 3.5,
-            borderRadius: 2,
-            bgcolor: 'rgba(211, 47, 47, 0.15)',
-            color: '#ff8a80',
-            border: '1px solid rgba(211, 47, 47, 0.3)',
-            fontWeight: 500,
-            fontSize: '0.875rem',
-            '& .MuiAlert-icon': {
-              color: '#ff8a80',
-            },
-          }}
-          aria-live="assertive"
-        >
+        <Alert severity="error" sx={{ mb: 3, borderRadius: `${radii.lg}px` }} aria-live="assertive">
           {apiError}
         </Alert>
       )}
 
-      {/* Role Selection */}
-      <FormControl
-        fullWidth
-        error={!!errors.role}
-        sx={{
-          mb: 3,
-          '& .MuiInputLabel-root': {
-            color: 'rgba(255, 255, 255, 0.8)',
-          },
-          '& .MuiInputLabel-root.Mui-focused': {
-            color: '#42A5F5',
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'rgba(255, 255, 255, 0.23)',
-            transition: 'border-color 0.2s ease-in-out',
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'rgba(255, 255, 255, 0.48)',
-          },
-          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#42A5F5',
-          },
-        }}
-        variant="outlined"
-      >
+      <FormControl fullWidth error={!!errors.role} sx={fieldSx}>
         <InputLabel id="role-select-label">Select Role</InputLabel>
         <Select
           labelId="role-select-label"
@@ -156,55 +102,30 @@ export const LoginForm = ({ onSubmit, isLoading, apiError }) => {
             setRole(e.target.value);
             if (errors.role) setErrors((prev) => ({ ...prev, role: '' }));
           }}
-          label="Select Role"
-          disabled={isLoading}
-          startAdornment={
-            <InputAdornment position="start">
-              <Work sx={{ color: 'rgba(255, 255, 255, 0.75)', mr: 0.5 }} />
-            </InputAdornment>
+          input={
+            <OutlinedInput
+              label="Select Role"
+              startAdornment={
+                <InputAdornment position="start">
+                  <Work sx={{ color: tokens.textMuted, fontSize: 20 }} />
+                </InputAdornment>
+              }
+            />
           }
+          disabled={isLoading}
           MenuProps={{
             PaperProps: {
               sx: {
-                bgcolor: '#0a0f1d',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+                bgcolor: tokens.paper,
+                border: `1px solid ${tokens.border}`,
+                borderRadius: `${radii.lg}px`,
                 mt: 0.5,
-                '& .MuiMenuItem-root': {
-                  color: '#FFFFFF',
-                  py: 1.25,
-                  px: 2,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    bgcolor: 'rgba(255, 255, 255, 0.08)',
-                  },
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(66, 165, 245, 0.2)',
-                    color: '#42A5F5',
-                    fontWeight: 600,
-                    '&:hover': {
-                      bgcolor: 'rgba(66, 165, 245, 0.3)',
-                    },
-                  },
-                },
               },
-            },
-          }}
-          sx={{
-            borderRadius: 2,
-            color: '#FFFFFF',
-            '& .MuiSelect-select': {
-              display: 'flex',
-              alignItems: 'center',
-              color: '#FFFFFF',
-            },
-            '& .MuiSvgIcon-root': {
-              color: 'rgba(255, 255, 255, 0.75)',
             },
           }}
         >
           {ROLES.map((r) => (
-            <MenuItem key={r} value={r}>
+            <MenuItem key={r} value={r} sx={{ color: tokens.text }}>
               {r}
             </MenuItem>
           ))}
@@ -216,15 +137,14 @@ export const LoginForm = ({ onSubmit, isLoading, apiError }) => {
         )}
       </FormControl>
 
-      {/* Email Input */}
       <TextField
         required
         fullWidth
-        id="email"
         label="Email Address"
         name="email"
+        type="email"
         autoComplete="email"
-        placeholder="Enter your email address"
+        placeholder="you@company.com"
         value={email}
         onChange={(e) => {
           setEmail(e.target.value);
@@ -233,66 +153,22 @@ export const LoginForm = ({ onSubmit, isLoading, apiError }) => {
         error={!!errors.email}
         helperText={errors.email}
         disabled={isLoading}
-        InputLabelProps={{
-          sx: {
-            color: 'rgba(255, 255, 255, 0.8)',
-            '&.Mui-focused': {
-              color: '#42A5F5',
-            },
-          },
-        }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Email sx={{ color: 'rgba(255, 255, 255, 0.75)' }} />
+              <Email sx={{ color: tokens.textMuted, fontSize: 20 }} />
             </InputAdornment>
           ),
-          sx: {
-            borderRadius: 2,
-            color: '#FFFFFF',
-            caretColor: '#FFFFFF',
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.23)',
-              transition: 'border-color 0.2s ease-in-out',
-            },
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.48)',
-            },
-            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#42A5F5',
-            },
-            '& input::placeholder': {
-              color: 'rgba(255, 255, 255, 0.6)',
-              opacity: 1,
-            },
-            '& input:-webkit-autofill': {
-              WebkitTextFillColor: '#FFFFFF !important',
-              WebkitBoxShadow: '0 0 0px 1000px #0a0f1d inset !important',
-              transition: 'background-color 5000s ease-in-out 0s',
-            },
-          },
         }}
-        sx={{
-          mb: 3,
-          '& .MuiFormHelperText-root': {
-            color: 'rgba(255, 255, 255, 0.7)',
-            mt: 0.75,
-            ml: 1.5,
-            '&.Mui-error': {
-              color: (theme) => theme.palette.error.main,
-            },
-          },
-        }}
+        sx={fieldSx}
       />
 
-      {/* Password Input */}
       <TextField
         required
         fullWidth
-        name="password"
         label="Password"
+        name="password"
         type={showPassword ? 'text' : 'password'}
-        id="password"
         autoComplete="current-password"
         placeholder="Enter your password"
         value={password}
@@ -303,154 +179,56 @@ export const LoginForm = ({ onSubmit, isLoading, apiError }) => {
         error={!!errors.password}
         helperText={errors.password}
         disabled={isLoading}
-        InputLabelProps={{
-          sx: {
-            color: 'rgba(255, 255, 255, 0.8)',
-            '&.Mui-focused': {
-              color: '#42A5F5',
-            },
-          },
-        }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Lock sx={{ color: 'rgba(255, 255, 255, 0.75)' }} />
+              <Lock sx={{ color: tokens.textMuted, fontSize: 20 }} />
             </InputAdornment>
           ),
           endAdornment: (
             <InputAdornment position="end">
               <IconButton
                 aria-label="toggle password visibility"
-                onClick={handleTogglePassword}
+                onClick={() => setShowPassword((p) => !p)}
                 edge="end"
-                disabled={isLoading}
-                sx={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                sx={{ color: tokens.textMuted }}
               >
                 {showPassword ? <VisibilityOff /> : <Visibility />}
               </IconButton>
             </InputAdornment>
           ),
-          sx: {
-            borderRadius: 2,
-            color: '#FFFFFF',
-            caretColor: '#FFFFFF',
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.23)',
-              transition: 'border-color 0.2s ease-in-out',
-            },
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.48)',
-            },
-            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#42A5F5',
-            },
-            '& input::placeholder': {
-              color: 'rgba(255, 255, 255, 0.6)',
-              opacity: 1,
-            },
-            '& input:-webkit-autofill': {
-              WebkitTextFillColor: '#FFFFFF !important',
-              WebkitBoxShadow: '0 0 0px 1000px #0a0f1d inset !important',
-              transition: 'background-color 5000s ease-in-out 0s',
-            },
-          },
         }}
-        sx={{
-          mb: 2.5,
-          '& .MuiFormHelperText-root': {
-            color: 'rgba(255, 255, 255, 0.7)',
-            mt: 0.75,
-            ml: 1.5,
-            '&.Mui-error': {
-              color: (theme) => theme.palette.error.main,
-            },
-          },
-        }}
+        sx={{ ...fieldSx, mb: 2.5 }}
       />
 
-      {/* Remember Me and Forgot Password */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3.5,
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3.5, flexWrap: 'wrap', gap: 1 }}>
         <FormControlLabel
           control={
             <Checkbox
-              value="remember"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={isLoading}
               sx={{
-                color: 'rgba(255, 255, 255, 0.3)',
-                '&.Mui-checked': {
-                  color: '#42A5F5',
-                },
+                color: tokens.textMuted,
+                '&.Mui-checked': { color: palette.accentDark },
               }}
             />
           }
-          label={<Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.85)' }}>Remember Me</Typography>}
+          label={<Typography variant="body2" sx={{ color: tokens.textSecondary }}>Remember me</Typography>}
         />
         <Link
-          component="button"
-          type="button"
+          component={RouterLink}
+          to="/help"
           variant="body2"
-          onClick={() => {}}
-          sx={{
-            textDecoration: 'none',
-            color: 'rgba(255, 255, 255, 0.5)',
-            cursor: 'not-allowed',
-            '&:hover': {
-              color: 'rgba(255, 255, 255, 0.5)',
-            },
-          }}
-          disabled
+          sx={{ color: tokens.textMuted, textDecoration: 'none', '&:hover': { color: palette.accentDark } }}
         >
-          Forgot Password?
+          Forgot password?
         </Link>
       </Box>
 
-      {/* Login Button */}
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        size="large"
-        disabled={isLoading}
-        sx={{
-          py: 1.75,
-          borderRadius: 2,
-          fontWeight: 700,
-          fontSize: '1rem',
-          bgcolor: 'primary.main',
-          color: 'white',
-          position: 'relative',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            bgcolor: 'primary.dark',
-            transform: 'translateY(-1px)',
-            boxShadow: '0 6px 20px rgba(66, 165, 245, 0.4)',
-          },
-          '&:active': {
-            transform: 'translateY(1px)',
-          },
-          '&.Mui-disabled': {
-            bgcolor: 'rgba(255, 255, 255, 0.12)',
-            color: 'rgba(255, 255, 255, 0.3)',
-          },
-        }}
-      >
-        {isLoading ? (
-          <CircularProgress size={24} sx={{ color: 'rgba(255, 255, 255, 0.5)' }} />
-        ) : (
-          'Sign In'
-        )}
-      </Button>
+      <GlowButton type="submit" fullWidth disabled={isLoading} sx={{ py: 1.6, borderRadius: `${radii.pill}px`, width: '100%' }}>
+        {isLoading ? <CircularProgress size={24} sx={{ color: '#111111' }} /> : 'Sign in to console'}
+      </GlowButton>
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -13,7 +13,12 @@ import {
   MenuItem,
   Divider,
   Avatar,
+  Button,
   useTheme,
+  useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   alpha,
 } from '@mui/material';
 import {
@@ -26,98 +31,116 @@ import {
   Logout,
   Settings,
 } from '@mui/icons-material';
-import { useThemeContext } from "../contexts/ThemeContext";
+import { useThemeContext } from '../contexts/ThemeContext';
 import { useSidebar } from '../contexts/SidebarContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import authService from '../services/auth';
+import { palette, radii } from '../theme/colors';
+import { getSearchableNavItemsForRole } from '../utils/navigation';
 
-const NAVBAR_HEIGHT = 64;
+const NAVBAR_HEIGHT = 72;
 
 const breadcrumbs = {
-  '/': { label: 'Dashboard', path: '/' },
-  '/topology': { label: 'Infrastructure', path: '/topology' },
-  '/simulation': { label: 'Simulation', path: '/simulation' },
-  '/prediction': { label: 'Prediction', path: '/prediction' },
-  '/risk': { label: 'Risk Analysis', path: '/risk' },
-  '/cost': { label: 'Cost Analysis', path: '/cost' },
-  '/history': { label: 'History', path: '/history' },
+  '/dashboard': { label: 'Dashboard' },
+  '/topology': { label: 'Infrastructure' },
+  '/simulation': { label: 'Simulation' },
+  '/prediction': { label: 'Prediction' },
+  '/risk': { label: 'Risk Analysis' },
+  '/cost': { label: 'Cost Analysis' },
+  '/history': { label: 'History' },
+  '/settings': { label: 'Settings' },
+  '/help': { label: 'Help' },
 };
 
 const Navbar = () => {
   const muiTheme = useTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+  const isCompact = useMediaQuery(muiTheme.breakpoints.down('lg'));
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const { mode, toggleTheme } = useThemeContext();
-  const { toggle } = useSidebar();
+  const { toggle, setMobileOpen } = useSidebar();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, isRead } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser() || { name: 'Guest User', role: '' });
 
-  const profileOpen = Boolean(anchorEl);
-  const notificationOpen = Boolean(notificationAnchorEl);
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(authService.getCurrentUser() || { name: 'Guest User', role: '' });
+    syncUser();
+    window.addEventListener('auth:changed', syncUser);
+    return () => window.removeEventListener('auth:changed', syncUser);
+  }, []);
 
-  const currentUser = authService.getCurrentUser() || { email: '', role: '', name: 'Guest User' };
+  const navItems = getSearchableNavItemsForRole(currentUser.role);
+  const currentBreadcrumb = breadcrumbs[location.pathname] || { label: 'Dashboard' };
 
-  const getInitials = (name) => {
-    if (!name) return 'GU';
-    return name
-      .split(' ')
+  const handleSearchKeyDown = (e) => {
+    if (e.key !== 'Enter' || !searchQuery.trim()) return;
+    const q = searchQuery.toLowerCase();
+    const match = navItems.find((item) => item.label.toLowerCase().includes(q) || item.path.includes(q));
+    if (match) {
+      navigate(match.path);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
+
+  const handleMenuClick = () => {
+    if (isCompact) setMobileOpen(true);
+    else toggle();
+  };
+
+  const getInitials = (name) =>
+    name
+      ?.split(' ')
       .map((n) => n[0])
       .join('')
       .toUpperCase()
-      .substring(0, 2);
+      .substring(0, 2) || 'GU';
+
+  const handleOpenNotifications = (e) => {
+    setNotificationAnchorEl(e.currentTarget);
   };
 
-  const handleLogout = () => {
-    handleMenuClose();
-    authService.logout();
-    navigate('/login');
-  };
-
-  const handleProfileMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationMenuOpen = (event) => {
-    setNotificationAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const handleCloseNotifications = () => {
     setNotificationAnchorEl(null);
   };
 
-  const currentBreadcrumb = breadcrumbs[location.pathname] || { label: 'Dashboard', path: '/' };
+  const handleNotificationClick = (id) => {
+    markAsRead(id);
+    setNotificationAnchorEl(null);
+  };
 
   return (
     <AppBar
       position="fixed"
+      elevation={0}
       sx={{
         height: NAVBAR_HEIGHT,
         zIndex: () => muiTheme.zIndex.drawer + 1,
-        bgcolor: muiTheme.palette.mode === 'dark' ? '#1E1E1E' : '#FFFFFF',
+        bgcolor: isDark ? alpha('#111111', 0.95) : 'rgba(252, 251, 248, 0.90)',
+        backdropFilter: 'blur(14px)',
         color: muiTheme.palette.text.primary,
-        boxShadow: 'none',
         borderBottom: `1px solid ${muiTheme.palette.divider}`,
+        boxShadow: 'none',
       }}
     >
-      <Toolbar>
-        <IconButton
-          edge="start"
-          onClick={toggle}
-          sx={{ mr: 2, color: 'text.primary' }}
-        >
+      <Toolbar sx={{ minHeight: `${NAVBAR_HEIGHT}px !important`, px: { xs: 2, md: 3 } }}>
+        <IconButton edge="start" onClick={handleMenuClick} sx={{ mr: 2, color: 'text.primary' }}>
           <MenuIcon />
         </IconButton>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1 }}>
-            Platform
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.04em' }}>
+            TWIN DIGITAL
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1 }}>
-            /
-          </Typography>
-          <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>/</Typography>
+          <Typography variant="subtitle1" fontWeight={700} color="text.primary">
             {currentBreadcrumb.label}
           </Typography>
         </Box>
@@ -125,139 +148,167 @@ const Navbar = () => {
         <Box sx={{ flexGrow: 1 }} />
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              width: { xs: 0, sm: 200, md: 300 },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: alpha(muiTheme.palette.action.hover, 0.05),
-                '&:hover': {
-                  bgcolor: alpha(muiTheme.palette.action.hover, 0.08),
+          {isMobile ? (
+            <IconButton onClick={() => setSearchOpen(true)} sx={{ color: 'text.primary' }} aria-label="search">
+              <Search />
+            </IconButton>
+          ) : (
+            <TextField
+              placeholder="Search resources..."
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              sx={{
+                width: { sm: 220, md: 320 },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: `${radii.lg}px`,
+                  bgcolor: isDark ? alpha('#FFFFFF', 0.04) : palette.background,
+                  color: 'text.primary',
                 },
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
 
-          <IconButton
-            onClick={toggleTheme}
-            sx={{ color: 'text.primary', ml: 1 }}
-            aria-label="toggle theme"
-          >
+          <Dialog open={searchOpen} onClose={() => setSearchOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Search console</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                fullWidth
+                placeholder="Search pages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                sx={{ mt: 1 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+
+          <IconButton onClick={toggleTheme} sx={{ color: 'text.primary' }} aria-label="toggle theme">
             {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
           </IconButton>
 
-          <IconButton
-            onClick={handleNotificationMenuOpen}
-            sx={{ color: 'text.primary' }}
-            aria-label="notifications"
-          >
-            <Badge badgeContent={3} color="error">
+          <IconButton onClick={handleOpenNotifications} sx={{ color: 'text.primary' }} aria-label="notifications">
+            <Badge badgeContent={unreadCount} color="error" invisible={unreadCount === 0}>
               <Notifications />
             </Badge>
           </IconButton>
 
           <Menu
             anchorEl={notificationAnchorEl}
-            open={notificationOpen}
-            onClose={handleMenuClose}
+            open={Boolean(notificationAnchorEl)}
+            onClose={handleCloseNotifications}
             PaperProps={{
               sx: {
                 width: 360,
-                maxHeight: 480,
                 mt: 1.5,
-                borderRadius: 2,
+                borderRadius: `${radii.lg}px`,
+                bgcolor: 'background.paper',
+                border: `1px solid ${muiTheme.palette.divider}`,
               },
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
-            <Box sx={{ p: 2, bgcolor: alpha(muiTheme.palette.primary.main, 0.05) }}>
-              <Typography variant="subtitle2" fontWeight={600}>
+            <Box
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                bgcolor: isDark ? alpha('#FFFFFF', 0.03) : alpha('#111111', 0.03),
+                borderBottom: `1px solid ${muiTheme.palette.divider}`,
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700}>
                 Notifications
               </Typography>
+              {unreadCount > 0 && (
+                <Button size="small" onClick={markAllAsRead} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
+                  Mark all read
+                </Button>
+              )}
             </Box>
-            {[1, 2, 3].map((i) => (
-              <MenuItem key={i} onClick={handleMenuClose} sx={{ py: 1.5, px: 2 }}>
+            {notifications.map((item) => (
+              <MenuItem
+                key={item.id}
+                onClick={() => handleNotificationClick(item.id)}
+                sx={{
+                  py: 1.5,
+                  alignItems: 'flex-start',
+                  bgcolor: isRead(item.id) ? 'transparent' : isDark ? alpha(palette.accent, 0.08) : alpha(palette.accent, 0.06),
+                  borderBottom: `1px solid ${muiTheme.palette.divider}`,
+                }}
+              >
                 <Box sx={{ width: '100%' }}>
-                  <Typography variant="body2" fontWeight={500}>
-                    Notification {i}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="body2" fontWeight={isRead(item.id) ? 500 : 700}>
+                      {item.title}
+                    </Typography>
+                    {!isRead(item.id) && (
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: palette.accent, flexShrink: 0, mt: 0.5 }} />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                    {item.message}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    This is a sample notification message
+                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+                    {item.time}
                   </Typography>
                 </Box>
               </MenuItem>
             ))}
-            <Divider />
-            <MenuItem onClick={handleMenuClose} sx={{ justifyContent: 'center', py: 1 }}>
-              <Typography variant="body2" color="primary">
-                View All Notifications
-              </Typography>
-            </MenuItem>
           </Menu>
 
-          <IconButton
-            onClick={handleProfileMenuOpen}
-            sx={{ ml: 1 }}
-            aria-label="profile"
-          >
-            <Avatar
-              sx={{
-                width: 36,
-                height: 36,
-                bgcolor: 'primary.main',
-              }}
-            >
+          <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 0.5 }}>
+            <Avatar sx={{ width: 40, height: 40, bgcolor: palette.accent, color: '#111111', fontWeight: 700, fontSize: 14 }}>
               {getInitials(currentUser.name)}
             </Avatar>
           </IconButton>
 
           <Menu
             anchorEl={anchorEl}
-            open={profileOpen}
-            onClose={handleMenuClose}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
             PaperProps={{
               sx: {
-                width: 220,
+                width: 240,
                 mt: 1.5,
-                borderRadius: 2,
+                borderRadius: `${radii.lg}px`,
+                bgcolor: 'background.paper',
+                border: `1px solid ${muiTheme.palette.divider}`,
               },
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
-              <Typography variant="subtitle2" fontWeight={600} noWrap>
-                {currentUser.name}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {currentUser.role}
-              </Typography>
+              <Typography variant="subtitle2" fontWeight={700}>{currentUser.name}</Typography>
+              <Typography variant="caption" color="text.secondary">{currentUser.role}</Typography>
             </Box>
             <Divider />
-            <MenuItem onClick={handleMenuClose}>
-              <AccountCircle sx={{ mr: 2 }} />
-              Profile
-            </MenuItem>
-            <MenuItem onClick={handleMenuClose}>
-              <Settings sx={{ mr: 2 }} />
-              Settings
-            </MenuItem>
+            <MenuItem onClick={() => { setAnchorEl(null); navigate('/settings'); }}><AccountCircle sx={{ mr: 1.5 }} /> Profile</MenuItem>
+            <MenuItem onClick={() => { setAnchorEl(null); navigate('/settings'); }}><Settings sx={{ mr: 1.5 }} /> Settings</MenuItem>
             <Divider />
-            <MenuItem onClick={handleLogout}>
-              <Logout sx={{ mr: 2 }} />
-              Logout
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                authService.logout();
+                navigate('/login');
+              }}
+            >
+              <Logout sx={{ mr: 1.5 }} /> Logout
             </MenuItem>
           </Menu>
         </Box>

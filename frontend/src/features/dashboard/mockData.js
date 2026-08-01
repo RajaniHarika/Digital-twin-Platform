@@ -1,7 +1,8 @@
 export const mockDashboardData = {
   header: {
     welcomeMessage: "Welcome back, DevOps Engineer",
-    clusterHealthBadge: "Healthy"
+    clusterHealthBadge: "Healthy",
+    clusterHealthScore: 98.4,
   },
   clusterHealth: {
     nodes: [

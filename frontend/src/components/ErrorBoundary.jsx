@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import authService from '../services/auth';
 import { Box, Typography, Button, Alert, AlertTitle } from '@mui/material';
 import { Refresh, Home } from '@mui/icons-material';
 
@@ -56,7 +57,9 @@ class ErrorBoundary extends Component {
             <Button
               variant="outlined"
               startIcon={<Home />}
-              onClick={() => (window.location.href = '/')}
+              onClick={() => {
+                window.location.href = authService.isAuthenticated() ? '/dashboard' : '/';
+              }}
             >
               Go Home
             </Button>

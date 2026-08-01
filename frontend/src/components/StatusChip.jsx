@@ -1,19 +1,20 @@
 import { Chip } from '@mui/material';
-import { CheckCircle, Warning, Error, RemoveCircle } from '@mui/icons-material';
+import { CheckCircle, Warning, Error, RemoveCircle, Info } from '@mui/icons-material';
 
 const StatusChip = ({ status, size = 'small', sx, label: customLabel }) => {
   const statusKey = status?.toLowerCase() || 'unknown';
 
   const config = {
-    healthy: { label: 'Healthy', icon: CheckCircle, color: '#2E7D32' },
-    warning: { label: 'Warning', icon: Warning, color: '#ED6C02' },
-    critical: { label: 'Critical', icon: Error, color: '#D32F2F' },
-    unknown: { label: 'Unknown', icon: RemoveCircle, color: '#757575' },
-    success: { label: 'Success', icon: CheckCircle, color: '#2E7D32' },
-    running: { label: 'Running', icon: CheckCircle, color: '#0288D1' },
-    completed: { label: 'Completed', icon: CheckCircle, color: '#2E7D32' },
-    failed: { label: 'Failed', icon: Error, color: '#D32F2F' },
-    pending: { label: 'Pending', icon: RemoveCircle, color: '#757575' },
+    healthy: { label: 'Healthy', icon: CheckCircle, color: '#22C55E' },
+    warning: { label: 'Warning', icon: Warning, color: '#F59E0B' },
+    critical: { label: 'Critical', icon: Error, color: '#EF4444' },
+    unknown: { label: 'Unknown', icon: RemoveCircle, color: '#8F8F8F' },
+    success: { label: 'Success', icon: CheckCircle, color: '#22C55E' },
+    running: { label: 'Running', icon: CheckCircle, color: '#94C600' },
+    completed: { label: 'Completed', icon: CheckCircle, color: '#22C55E' },
+    failed: { label: 'Failed', icon: Error, color: '#EF4444' },
+    pending: { label: 'Pending', icon: RemoveCircle, color: '#8F8F8F' },
+    info: { label: 'Info', icon: Info, color: '#565656' },
   };
 
   const { Icon, label, color } = config[statusKey] || config.unknown;

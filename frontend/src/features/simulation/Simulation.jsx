@@ -12,6 +12,7 @@ import {
   alpha,
   useTheme,
   Tooltip,
+  Alert,
 } from '@mui/material';
 import {
   Science,
@@ -26,6 +27,7 @@ import { motion } from 'framer-motion';
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -38,6 +40,7 @@ import {
   Radar,
 } from 'recharts';
 import StatusChip from '../../components/StatusChip';
+import EmptyState from '../../components/EmptyState';
 import { PageSkeleton } from '../../components/LoadingSkeleton';
 import { dashboardApi } from '../../services/api';
 import { getRelativeTime, formatDuration } from '../../utils/formatters';
@@ -66,6 +69,7 @@ const Simulation = () => {
   const theme = useTheme();
   const [simulations, setSimulations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [newSim, setNewSim] = useState({
@@ -82,15 +86,35 @@ const Simulation = () => {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await dashboardApi.getRecentSimulations();
       setSimulations(res.data);
     } catch (err) {
       console.error('Simulation fetch error:', err);
+      setError('Unable to load simulations.');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const handleRunSimulation = useCallback(async () => {
+    try {
+      await dashboardApi.createSimulation({
+        name: newSim.name,
+        type: newSim.strategy,
+        strategy: newSim.strategy,
+        targetService: newSim.targetService,
+        loadFactor: newSim.loadFactor,
+      });
+      handleDialogClose();
+      setNewSim({ name: '', strategy: 'rolling', targetService: '', loadFactor: 1 });
+      await fetchData();
+    } catch (err) {
+      console.error('Simulation create error:', err);
+      setError('Failed to start simulation.');
+    }
+  }, [newSim, fetchData, handleDialogClose]);
 
   useEffect(() => {
     fetchData();
@@ -122,7 +146,12 @@ const Simulation = () => {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Box>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
+            {error}
+          </Alert>
+        )}
         {/* Header */}
         <motion.div variants={itemVariants}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -204,7 +233,7 @@ const Simulation = () => {
                       />
                       <Bar dataKey="risk" radius={[6, 6, 0, 0]} barSize={40}>
                         {barChartData.map((entry, index) => (
-                          <motion.rect key={index} fill={entry.fill} />
+                          <Cell key={index} fill={entry.fill} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -244,6 +273,14 @@ const Simulation = () => {
           <Card>
             <CardHeader title={<Typography variant="h6" fontWeight={600}>Simulation History</Typography>} />
             <CardContent sx={{ pt: 0 }}>
+              {simulations.length === 0 ? (
+                <EmptyState
+                  title="No simulations yet"
+                  description="Create a new simulation to run what-if scenarios against your infrastructure."
+                  actionLabel="Refresh"
+                  onAction={fetchData}
+                />
+              ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {simulations.map((sim) => (
                   <motion.div
@@ -309,6 +346,7 @@ const Simulation = () => {
                   </motion.div>
                 ))}
               </Box>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -317,6 +355,7 @@ const Simulation = () => {
         <NewSimulationDialog
           open={dialogOpen}
           onClose={handleDialogClose}
+          onSubmit={handleRunSimulation}
           activeStep={activeStep}
           setActiveStep={setActiveStep}
           newSim={newSim}

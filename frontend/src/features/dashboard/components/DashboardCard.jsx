@@ -1,27 +1,27 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
-const DashboardCard = ({ title, action, children, sx = {}, noPadding = false }) => {
+const DashboardCard = ({ title, action, children, sx = {}, noPadding = false, compact = false }) => {
+  const { tokens } = useAppTheme();
+
   return (
     <Box
       component={motion.div}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.25 }}
       sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: '#FFFFFF',
-        borderRadius: '16px',
-        border: '1px solid #E2E8F0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        bgcolor: tokens.paper,
+        borderRadius: `${tokens.radii.xl}px`,
+        border: `1px solid ${tokens.border}`,
+        boxShadow: tokens.shadow,
         overflow: 'hidden',
-        transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+        transition: tokens.transitions.default,
         '&:hover': {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-          borderColor: '#CBD5E1',
+          boxShadow: tokens.shadowHover,
+          transform: 'translateY(-3px)',
         },
         ...sx,
       }}
@@ -29,20 +29,21 @@ const DashboardCard = ({ title, action, children, sx = {}, noPadding = false }) 
       {title && (
         <Box
           sx={{
-            px: 2.5,
-            py: 1.75,
+            px: compact ? 2 : 2.5,
+            py: compact ? 1.25 : 1.5,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            borderBottom: '1px solid #F1F5F9',
+            borderBottom: `1px solid ${tokens.border}`,
+            flexShrink: 0,
           }}
         >
           <Typography
             sx={{
-              color: '#334155',
+              color: tokens.textLabel,
               fontWeight: 600,
-              fontSize: '0.8rem',
-              letterSpacing: '0.04em',
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
               textTransform: 'uppercase',
             }}
           >
@@ -51,14 +52,7 @@ const DashboardCard = ({ title, action, children, sx = {}, noPadding = false }) 
           {action && <Box>{action}</Box>}
         </Box>
       )}
-      <Box
-        sx={{
-          p: noPadding ? 0 : 2.5,
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <Box sx={{ p: noPadding ? 0 : compact ? { xs: 1.5, md: 2 } : { xs: 2, md: 2.5 } }}>
         {children}
       </Box>
     </Box>
