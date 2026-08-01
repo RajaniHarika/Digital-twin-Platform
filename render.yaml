@@ -3,7 +3,7 @@ services:
     name: a1
     runtime: node
     plan: free
-    buildCommand: npm install && npm run install:all && npm run build
+    buildCommand: npm install --include=dev && npm run install:all && npm run build
     startCommand: npm run start
     healthCheckPath: /health
     envVars:
