@@ -77,6 +77,7 @@ if (hasFrontendBuild) {
       return;
     }
 
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => {
       if (err) next(err);
     });

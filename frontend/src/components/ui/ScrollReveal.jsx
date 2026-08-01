@@ -19,12 +19,12 @@ const ScrollReveal = ({
   return (
     <Box ref={ref}>
       <motion.div
-        initial={{ opacity: 0, y, x, scale: scale === 1 ? 1 : scale - 0.04, filter: blur ? `blur(${blur}px)` : 'none' }}
         animate={
           isInView
             ? { opacity: 1, y: 0, x: 0, scale: 1, filter: 'blur(0px)' }
-            : { opacity: 0, y, x, scale: scale === 1 ? 1 : scale - 0.04, filter: blur ? `blur(${blur}px)` : 'none' }
+            : undefined
         }
+        initial={{ opacity: 1, y: 0, x: 0, scale: 1, filter: 'none' }}
         transition={{ duration, delay, ease: ease.out }}
       >
         {children}

@@ -1,6 +1,5 @@
 import { Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeProvider, useThemeContext } from './contexts/ThemeContext';
 import { SidebarProvider } from './contexts/SidebarContext';
@@ -10,7 +9,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { PageSkeleton } from './components/LoadingSkeleton';
 import routes from './routes';
 import authService from './services/auth';
-import { pageTransition } from './theme/motion';
 
 authService.init();
 
@@ -101,16 +99,7 @@ const AnimatedRoutes = () => {
         <Route
           key={route.path}
           path={route.path}
-          element={
-            <motion.div
-              initial={pageTransition.initial}
-              animate={pageTransition.animate}
-              transition={pageTransition.transition}
-              style={{ minHeight: '100%' }}
-            >
-              <RouteElement route={route} />
-            </motion.div>
-          }
+          element={<RouteElement route={route} />}
         />
       ))}
     </Routes>
