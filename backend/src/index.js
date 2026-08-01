@@ -57,10 +57,15 @@ app.use('/api', authMiddleware, apiRoutes);
 app.use('/api/topology', authMiddleware, topologyRoutes);
 
 if (hasFrontendBuild) {
-  app.use(express.static(frontendDist, { index: false, maxAge: '1d' }));
+  app.use(express.static(frontendDist, { index: false, maxAge: '1d', fallthrough: true }));
 
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      next();
+      return;
+    }
+
+    if (req.path.startsWith('/api') || req.path.startsWith('/assets/')) {
       next();
       return;
     }
