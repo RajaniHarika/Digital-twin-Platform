@@ -20,24 +20,31 @@ const corsOrigins = (process.env.CORS_ORIGIN || '')
   .map((value) => value.trim())
   .filter(Boolean);
 
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+
+  if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    return true;
+  }
+
+  if (/^https:\/\/[\w-]+\.onrender\.com$/i.test(origin)) {
+    return true;
+  }
+
+  if (process.env.RENDER_EXTERNAL_URL && origin === process.env.RENDER_EXTERNAL_URL) {
+    return true;
+  }
+
+  if (corsOrigins.includes(origin)) {
+    return true;
+  }
+
+  return false;
+};
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
-
-    if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    if (corsOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error('Not allowed by CORS'));
+    callback(null, isAllowedOrigin(origin));
   },
   credentials: true,
 }));
@@ -78,9 +85,7 @@ if (hasFrontendBuild) {
 
 app.use((err, _req, res, _next) => {
   console.error(err);
-  res.status(err.message === 'Not allowed by CORS' ? 403 : 500).json({
-    message: err.message === 'Not allowed by CORS' ? 'Not allowed by CORS' : 'Internal server error',
-  });
+  res.status(500).json({ message: 'Internal server error' });
 });
 
 app.listen(PORT, () => {
