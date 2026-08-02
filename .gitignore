@@ -6,5 +6,23 @@ frontend/.env
 .env
 .env.*
 !.env.example
+
+# Maven
+target/
+
+# IDE
+.idea/
+.vscode/
+
+# IntelliJ
+*.iml
+
+# Logs
 *.log
+
+# Spring Boot
+HELP.md
+
+# OS
 .DS_Store
+Thumbs.db
