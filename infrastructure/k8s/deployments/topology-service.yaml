@@ -19,7 +19,7 @@ spec:
         - name: topology-service
           image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/topology-service:latest
           ports:
-            - containerPort: 8083
+            - containerPort: 8084
           envFrom:
             - configMapRef:
                 name: app-config
@@ -35,13 +35,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8083
+              port: 8084
             initialDelaySeconds: 60
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8083
+              port: 8084
             initialDelaySeconds: 30
             periodSeconds: 10
 ---
@@ -54,6 +54,6 @@ spec:
   selector:
     app: topology-service
   ports:
-    - port: 8083
-      targetPort: 8083
+    - port: 8084
+      targetPort: 8084
   type: ClusterIP
