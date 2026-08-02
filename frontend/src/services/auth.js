@@ -1,43 +1,47 @@
 /**
- * Mock Authentication Service for DevOps Digital Twin Platform.
- * Designed to mimic an asynchronous JWT-based authentication flow.
- * Can be easily swapped with a Spring Boot REST API client.
+ * Authentication Service for DevOps Digital Twin Platform.
+ * Connects to Spring Boot Auth Service via API Gateway.
  */
+import api from './api';
 
-const PREDEFINED_USERS = {
-  'admin@digitaltwin.com': { password: 'admin123', role: 'Admin', name: 'System Admin' },
-  'devops@digitaltwin.com': { password: 'devops123', role: 'DevOps Engineer', name: 'DevOps Lead' },
-  'backend@digitaltwin.com': { password: 'backend123', role: 'Backend Engineer', name: 'Backend Dev' },
-  'cloud@digitaltwin.com': { password: 'cloud123', role: 'Cloud Engineer', name: 'Cloud Architect' },
-  'sre@digitaltwin.com': { password: 'sre123', role: 'Site Reliability Engineer (SRE)', name: 'SRE Lead' },
-  'manager@digitaltwin.com': { password: 'manager123', role: 'Project Manager', name: 'Project Manager' },
+// Map frontend display role names → backend enum values
+const ROLE_TO_ENUM = {
+  'DevOps Engineer': 'DEVOPS_ENGINEER',
+  'Backend Engineer': 'BACKEND_ENGINEER',
+  'Cloud Engineer': 'CLOUD_ENGINEER',
+  'Site Reliability Engineer (SRE)': 'SRE_ENGINEER',
+  'Project Manager': 'PROJECT_MANAGER',
+  'Admin': 'ADMIN',
+};
+
+// Map backend enum values → frontend display role names
+const ENUM_TO_ROLE = {
+  'DEVOPS_ENGINEER': 'DevOps Engineer',
+  'BACKEND_ENGINEER': 'Backend Engineer',
+  'CLOUD_ENGINEER': 'CLOUD_ENGINEER' && 'Cloud Engineer',
+  'SRE_ENGINEER': 'Site Reliability Engineer (SRE)',
+  'PROJECT_MANAGER': 'Project Manager',
+  'ADMIN': 'Admin',
 };
 
 export const authService = {
   /**
    * Authenticates the user with email, password, and selected role.
-   * @param {string} email 
-   * @param {string} password 
-   * @param {string} role 
-   * @param {boolean} rememberMe 
-   * @returns {Promise<{ success: boolean, user: object }>}
+   * Calls POST /auth/login on the backend via API Gateway.
    */
   login: async (email, password, role, rememberMe) => {
-    // Simulate network delay to mimic an actual API request
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const response = await api.post('/auth/login', {
+      email: email?.toLowerCase().trim(),
+      password,
+    });
 
-    const normalizedEmail = email?.toLowerCase().trim();
-    const user = PREDEFINED_USERS[normalizedEmail];
+    const { token, role: backendRole, name, email: userEmail } = response.data;
+    const displayRole = ENUM_TO_ROLE[backendRole] || backendRole;
 
-    // Support SRE naming variations between dropdown ("Site Reliability Engineer (SRE)") and specs ("SRE Engineer")
-    const isSreMatch = 
-      (normalizedEmail === 'sre@digitaltwin.com') && 
-      (role === 'Site Reliability Engineer (SRE)' || role === 'SRE Engineer');
-
-    const roleMatches = user && (user.role === role || isSreMatch);
-
-    if (!user || user.password !== password || !roleMatches) {
-      throw new Error('Invalid email, password, or role.');
+    // Verify the role selected on the frontend matches the backend role
+    const expectedEnum = ROLE_TO_ENUM[role];
+    if (expectedEnum && expectedEnum !== backendRole) {
+      throw new Error('Selected role does not match your account role.');
     }
 
     // Set temporary login flag to trigger success Snackbar after redirect
@@ -46,21 +50,36 @@ export const authService = {
 
     // Store auth info in localStorage
     localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('authToken', 'mock-jwt-token');
-    localStorage.setItem('userEmail', normalizedEmail);
-    localStorage.setItem('userRole', user.role); // Store standard role
-    localStorage.setItem('userName', user.name);
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('userEmail', userEmail || email);
+    localStorage.setItem('userRole', displayRole);
+    localStorage.setItem('userName', name || displayRole);
     localStorage.setItem('loginTime', new Date().toISOString());
     localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
 
     return {
       success: true,
       user: {
-        email: normalizedEmail,
-        role: user.role,
-        name: user.name,
+        email: userEmail || email,
+        role: displayRole,
+        name: name || displayRole,
       },
     };
+  },
+
+  /**
+   * Registers a new user account.
+   * Calls POST /auth/register on the backend via API Gateway.
+   */
+  register: async (name, email, password, role) => {
+    const backendRole = ROLE_TO_ENUM[role] || role;
+    const response = await api.post('/auth/register', {
+      name,
+      email: email?.toLowerCase().trim(),
+      password,
+      role: backendRole,
+    });
+    return response.data;
   },
 
   /**

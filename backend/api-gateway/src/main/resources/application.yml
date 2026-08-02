@@ -1,10 +1,12 @@
 server:
-  port: 8080
+  port: 8090
 
 spring:
   application:
     name: api-gateway
   cloud:
+    compatibility-verifier:
+      enabled: false
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE

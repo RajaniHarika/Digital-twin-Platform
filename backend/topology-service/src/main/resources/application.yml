@@ -2,12 +2,15 @@ server:
   port: 8084
 
 spring:
+  cloud:
+    compatibility-verifier:
+      enabled: false
   application:
     name: topology-service
   datasource:
     url: jdbc:mysql://localhost:3306/digital_twin_platform
     username: root
-    password: Koushik@2004
+    password: Qwerty123
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,9 +23,7 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
   cache:
-    type: redis
-    redis:
-      time-to-live: 60000
+    type: simple
 
 management:
   endpoints:

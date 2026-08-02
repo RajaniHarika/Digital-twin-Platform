@@ -6,6 +6,20 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      // Forward auth requests to API Gateway
+      '/auth': {
+        target: 'http://localhost:8090',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Forward all /api/** requests to API Gateway
+      '/api': {
+        target: 'http://localhost:8090',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     outDir: 'dist',

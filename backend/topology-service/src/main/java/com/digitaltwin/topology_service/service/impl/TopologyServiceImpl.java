@@ -1,6 +1,7 @@
 package com.digitaltwin.topology_service.service.impl;
 
 import com.digitaltwin.topology_service.client.ClusterSyncClient;
+import com.digitaltwin.topology_service.client.ClusterSyncFallback;
 import com.digitaltwin.topology_service.dto.*;
 import com.digitaltwin.topology_service.service.TopologyService;
 import lombok.RequiredArgsConstructor;
@@ -16,28 +17,46 @@ public class TopologyServiceImpl implements TopologyService {
 
     private final ClusterSyncClient clusterSyncClient;
 
+    private final ClusterSyncFallback fallback = new ClusterSyncFallback();
+
     @Override
     @Cacheable(value = "topology-nodes", key = "'all'")
     public List<NodeDto> getAllNodes() {
-        return clusterSyncClient.getNodes();
+        try {
+            return clusterSyncClient.getNodes();
+        } catch (Exception e) {
+            return fallback.getNodes();
+        }
     }
 
     @Override
     @Cacheable(value = "topology-pods", key = "'all'")
     public List<PodDto> getAllPods() {
-        return clusterSyncClient.getPods();
+        try {
+            return clusterSyncClient.getPods();
+        } catch (Exception e) {
+            return fallback.getPods();
+        }
     }
 
     @Override
     @Cacheable(value = "topology-deployments", key = "'all'")
     public List<DeploymentDto> getAllDeployments() {
-        return clusterSyncClient.getDeployments();
+        try {
+            return clusterSyncClient.getDeployments();
+        } catch (Exception e) {
+            return fallback.getDeployments();
+        }
     }
 
     @Override
     @Cacheable(value = "topology-services", key = "'all'")
     public List<ServiceDto> getAllServices() {
-        return clusterSyncClient.getServices();
+        try {
+            return clusterSyncClient.getServices();
+        } catch (Exception e) {
+            return fallback.getServices();
+        }
     }
 
     @Override

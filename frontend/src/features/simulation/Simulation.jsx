@@ -39,7 +39,7 @@ import {
 } from 'recharts';
 import StatusChip from '../../components/StatusChip';
 import { PageSkeleton } from '../../components/LoadingSkeleton';
-import { dashboardApi } from '../../services/api';
+import { simulationApi } from '../../services/api';
 import { getRelativeTime, formatDuration } from '../../utils/formatters';
 import NewSimulationDialog from './components/NewSimulationDialog';
 
@@ -83,8 +83,17 @@ const Simulation = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await dashboardApi.getRecentSimulations();
-      setSimulations(res.data);
+      const res = await simulationApi.getAll();
+      // Normalize backend response to match UI expected shape
+      const data = (res.data || []).map((s) => ({
+        id: s.id ? `sim-${s.id}` : s.id,
+        name: s.name,
+        status: (s.status || '').toLowerCase(),
+        duration: s.duration,
+        timestamp: s.createdAt || s.timestamp,
+        riskScore: s.riskScore,
+      }));
+      setSimulations(data);
     } catch (err) {
       console.error('Simulation fetch error:', err);
     } finally {
