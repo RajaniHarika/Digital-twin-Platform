@@ -71,3 +71,21 @@ resource "aws_instance" "worker" {
     Role = "kubernetes-worker"
   }
 }
+
+resource "aws_eip" "master_eip" {
+  instance = aws_instance.master.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-master-eip"
+  }
+}
+
+resource "aws_eip" "worker_eip" {
+  instance = aws_instance.worker.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-worker-eip"
+  }
+}
