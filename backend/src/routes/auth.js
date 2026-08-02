@@ -6,6 +6,16 @@ import { signToken } from '../middleware/auth.js';
 const JWT_SECRET = process.env.JWT_SECRET || 'digital-twin-platform-secret-key-2026';
 const router = Router();
 
+// Map frontend enum values → display role names (frontend sends enums on login)
+const ENUM_TO_ROLE = {
+  'DEVOPS_ENGINEER': 'DevOps Engineer',
+  'BACKEND_ENGINEER': 'Backend Engineer',
+  'CLOUD_ENGINEER': 'Cloud Engineer',
+  'SRE_ENGINEER': 'Site Reliability Engineer (SRE)',
+  'PROJECT_MANAGER': 'Project Manager',
+  'ADMIN': 'Admin',
+};
+
 router.post('/login', (req, res) => {
   const { email, password, role } = req.body;
   const normalizedEmail = email?.toLowerCase().trim();
@@ -15,10 +25,13 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ message: 'Invalid email or password' });
   }
 
+  // Accept both plain display name and enum format sent by the frontend
+  const resolvedRole = ENUM_TO_ROLE[role] || role;
+
   const roleMatches =
-    user.role === role ||
+    user.role === resolvedRole ||
     (normalizedEmail === 'sre@digitaltwin.com' &&
-      (role === 'Site Reliability Engineer (SRE)' || role === 'SRE Engineer'));
+      (resolvedRole === 'Site Reliability Engineer (SRE)' || resolvedRole === 'SRE Engineer'));
 
   if (!roleMatches) {
     return res.status(401).json({ message: 'Invalid role for this account' });
