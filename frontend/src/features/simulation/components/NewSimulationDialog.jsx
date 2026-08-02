@@ -24,12 +24,35 @@ import { DEPLOYMENT_STRATEGIES } from '../../../utils/constants';
 const NewSimulationDialog = ({
   open,
   onClose,
+  onSubmit,
   activeStep,
   setActiveStep,
   newSim,
   setNewSim,
 }) => {
   const theme = useTheme();
+
+  const validateStep = () => {
+    if (activeStep === 0) {
+      if (!newSim.name?.trim()) return 'Simulation name is required.';
+      if (!newSim.strategy) return 'Select a deployment strategy.';
+    }
+    if (activeStep === 1) {
+      if (!newSim.targetService?.trim()) return 'Target service is required.';
+      const load = Number(newSim.loadFactor);
+      if (!load || load < 1 || load > 10) return 'Load factor must be between 1 and 10.';
+    }
+    return '';
+  };
+
+  const handleNext = () => {
+    const err = validateStep();
+    if (err) {
+      window.alert(err);
+      return;
+    }
+    setActiveStep((s) => s + 1);
+  };
 
   return (
     <Dialog
@@ -77,7 +100,7 @@ const NewSimulationDialog = ({
         {activeStep === 1 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             <TextField label="Target Service" value={newSim.targetService} onChange={(e) => setNewSim({ ...newSim, targetService: e.target.value })} fullWidth />
-            <TextField label="Load Factor" type="number" value={newSim.loadFactor} onChange={(e) => setNewSim({ ...newSim, loadFactor: e.target.value })} fullWidth />
+            <TextField label="Load Factor" type="number" inputProps={{ min: 1, max: 10, step: 0.1 }} value={newSim.loadFactor} onChange={(e) => setNewSim({ ...newSim, loadFactor: Number(e.target.value) })} fullWidth />
           </Box>
         )}
 
@@ -97,12 +120,12 @@ const NewSimulationDialog = ({
           <Button variant="outlined" onClick={() => setActiveStep((s) => s - 1)}>Back</Button>
         )}
         {activeStep < 2 ? (
-          <Button variant="contained" onClick={() => setActiveStep((s) => s + 1)}>Next</Button>
+          <Button variant="contained" onClick={handleNext}>Next</Button>
         ) : (
           <Button
             variant="contained"
             startIcon={<PlayArrow />}
-            onClick={onClose}
+            onClick={onSubmit}
             sx={{
               background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
             }}

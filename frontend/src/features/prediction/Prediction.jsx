@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -16,6 +16,8 @@ import {
   LinearProgress,
   Switch,
   FormControlLabel,
+  Alert,
+  Button,
 } from '@mui/material';
 import {
   Analytics,
@@ -26,7 +28,6 @@ import {
   Memory,
   Speed,
   Storage,
-  AutoFixHigh,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import {
@@ -39,19 +40,11 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+import ScrollSection from '../../components/ui/ScrollSection';
+import { dashboardApi } from '../../services/api';
 
 // Mock prediction data
-const cpuPrediction = [
+const MOCK_CPU_PREDICTION = [
   { time: 'Now', actual: 72, predicted: 72 },
   { time: '+1h', actual: null, predicted: 75 },
   { time: '+2h', actual: null, predicted: 79 },
@@ -63,7 +56,7 @@ const cpuPrediction = [
   { time: '+24h', actual: null, predicted: 65 },
 ];
 
-const memoryPrediction = [
+const MOCK_MEMORY_PREDICTION = [
   { time: 'Now', actual: 68, predicted: 68 },
   { time: '+1h', actual: null, predicted: 70 },
   { time: '+2h', actual: null, predicted: 73 },
@@ -87,17 +80,118 @@ const scalingEvents = [
   { time: '+24h', pods: 8 },
 ];
 
-const anomalies = [
+const MOCK_ANOMALIES = [
   { id: 1, service: 'Order Service', type: 'Latency Spike', confidence: 89, timeframe: '2-4 hours', severity: 'warning', description: 'Predicted p99 latency increase to 450ms based on current traffic patterns' },
   { id: 2, service: 'Payment Service', type: 'Memory Leak', confidence: 76, timeframe: '6-8 hours', severity: 'warning', description: 'Gradual memory increase detected, potential leak in connection pool' },
   { id: 3, service: 'API Gateway', type: 'Traffic Surge', confidence: 92, timeframe: '1-2 hours', severity: 'info', description: 'Expected traffic increase based on historical weekday patterns' },
   { id: 4, service: 'Database', type: 'Disk Usage', confidence: 65, timeframe: '24-48 hours', severity: 'info', description: 'Current growth rate suggests disk threshold in ~36 hours' },
 ];
 
+const mapPredictionToAnomaly = (p) => ({
+  id: p.id,
+  service: p.metric,
+  type: p.metric,
+  confidence: Math.round((p.confidence ?? 0.8) * 100),
+  timeframe: p.horizon,
+  severity: p.predicted > p.current ? 'warning' : 'info',
+  description: `Current: ${p.current}, predicted: ${p.predicted} over ${p.horizon}`,
+});
+
+const findMetric = (predictions, pattern) => predictions.find((p) => pattern.test(p.metric));
+
+const buildForecastChart = (prediction) => {
+  if (!prediction) return null;
+  const current = Number(prediction.current) || 0;
+  const predicted = Number(prediction.predicted) || current;
+  return [
+    { time: 'Current', actual: current, predicted: current },
+    { time: prediction.horizon || 'Forecast', actual: null, predicted },
+  ];
+};
+
+const buildScalingChart = (podsPrediction, enabled) => {
+  if (!enabled || !podsPrediction) return scalingEvents;
+  return [
+    { time: 'Current', pods: Math.round(Number(podsPrediction.current) || 8) },
+    { time: podsPrediction.horizon || 'Forecast', pods: Math.round(Number(podsPrediction.predicted) || 8) },
+  ];
+};
+
+const buildSummaryStats = (predictions, anomalies, theme) => {
+  const cpu = findMetric(predictions, /cpu/i);
+  const memory = findMetric(predictions, /memory/i);
+  const pods = findMetric(predictions, /pod/i);
+  const formatVal = (p, suffix = '%') => (p ? `${Math.round(Number(p.predicted))}${suffix}` : '—');
+
+  return [
+    { label: 'CPU Forecast', value: formatVal(cpu), trend: cpu && cpu.predicted > cpu.current ? 'up' : 'down', icon: <Speed />, color: theme.palette.error.main },
+    { label: 'Memory / Pod Forecast', value: formatVal(memory || pods), trend: 'up', icon: <Memory />, color: theme.palette.warning.main },
+    { label: 'Predicted Pods', value: pods ? String(Math.round(Number(pods.predicted))) : '—', trend: 'up', icon: <Storage />, color: theme.palette.info.main },
+    { label: 'Forecasts Loaded', value: String(anomalies.length), trend: 'down', icon: <Analytics />, color: theme.palette.secondary.main },
+  ];
+};
+
 const Prediction = () => {
   const theme = useTheme();
   const [predictionTab, setPredictionTab] = useState(0);
   const [autoScale, setAutoScale] = useState(true);
+  const [anomalies, setAnomalies] = useState(MOCK_ANOMALIES);
+  const [cpuPrediction, setCpuPrediction] = useState(MOCK_CPU_PREDICTION);
+  const [memoryPrediction, setMemoryPrediction] = useState(MOCK_MEMORY_PREDICTION);
+  const [scalingData, setScalingData] = useState(scalingEvents);
+  const [summaryStats, setSummaryStats] = useState([]);
+  const [usingMock, setUsingMock] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    setError(null);
+    try {
+      const res = await dashboardApi.getPredictions();
+      const predictions = res.data || [];
+      if (predictions.length) {
+        setUsingMock(false);
+        setAnomalies(predictions.map(mapPredictionToAnomaly));
+        const cpu = findMetric(predictions, /cpu/i);
+        const memory = findMetric(predictions, /memory|pod/i);
+        const pods = findMetric(predictions, /pod/i);
+        setCpuPrediction(buildForecastChart(cpu) || MOCK_CPU_PREDICTION);
+        setMemoryPrediction(buildForecastChart(memory || pods) || MOCK_MEMORY_PREDICTION);
+        setScalingData(buildScalingChart(pods, autoScale));
+        setSummaryStats(buildSummaryStats(predictions, predictions, theme));
+      } else {
+        setUsingMock(true);
+        setAnomalies(MOCK_ANOMALIES);
+        setCpuPrediction(MOCK_CPU_PREDICTION);
+        setMemoryPrediction(MOCK_MEMORY_PREDICTION);
+        setScalingData(scalingEvents);
+        setSummaryStats(buildSummaryStats([], MOCK_ANOMALIES, theme));
+      }
+    } catch (err) {
+      console.error('Prediction fetch error:', err);
+      setError('Unable to load prediction data.');
+      setUsingMock(true);
+      setAnomalies(MOCK_ANOMALIES);
+      setCpuPrediction(MOCK_CPU_PREDICTION);
+      setMemoryPrediction(MOCK_MEMORY_PREDICTION);
+      setScalingData(scalingEvents);
+      setSummaryStats(buildSummaryStats([], MOCK_ANOMALIES, theme));
+    }
+  }, [autoScale, theme]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (!usingMock) {
+      dashboardApi.getPredictions().then((res) => {
+        const pods = findMetric(res.data || [], /pod/i);
+        setScalingData(buildScalingChart(pods, autoScale));
+      }).catch(() => {});
+    } else {
+      setScalingData(autoScale ? scalingEvents : scalingEvents.map((e) => ({ ...e, pods: 8 })));
+    }
+  }, [autoScale, usingMock]);
 
   const predictionDatasets = [cpuPrediction, memoryPrediction];
   const predictionColors = [theme.palette.primary.main, theme.palette.secondary.main];
@@ -112,10 +206,17 @@ const Prediction = () => {
   };
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box>
+        {usingMock && (
+          <Alert severity="info" sx={{ mb: 2 }}>Showing demo forecast data — connect predictions API for live forecasts.</Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
+            {error}
+          </Alert>
+        )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -126,31 +227,24 @@ const Prediction = () => {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Chip
-                icon={<AutoFixHigh />}
-                label="ML Model v2.4"
-                variant="outlined"
-                color="primary"
-                sx={{ fontWeight: 600 }}
-              />
               <Tooltip title="Refresh">
-                <IconButton sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
+                <IconButton onClick={fetchData} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
                   <Refresh />
                 </IconButton>
               </Tooltip>
             </Box>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Prediction Summary Cards */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Grid container spacing={2} sx={{ mb: 4 }}>
-            {[
+            {(summaryStats.length ? summaryStats : [
               { label: 'Peak CPU (24h)', value: '88%', trend: 'up', icon: <Speed />, color: theme.palette.error.main },
               { label: 'Peak Memory (24h)', value: '80%', trend: 'up', icon: <Memory />, color: theme.palette.warning.main },
               { label: 'Predicted Scaling', value: '14 pods', trend: 'up', icon: <Storage />, color: theme.palette.info.main },
               { label: 'Anomalies Detected', value: anomalies.length.toString(), trend: 'down', icon: <Analytics />, color: theme.palette.secondary.main },
-            ].map((stat) => (
+            ]).map((stat) => (
               <Grid size={{ xs: 6, md: 3 }} key={stat.label}>
                 <Card sx={{ bgcolor: alpha(stat.color, 0.06), border: `1px solid ${alpha(stat.color, 0.15)}` }}>
                   <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
@@ -169,12 +263,12 @@ const Prediction = () => {
               </Grid>
             ))}
           </Grid>
-        </motion.div>
+        </ScrollSection>
 
         {/* Prediction Charts */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, lg: 8 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card>
                 <CardHeader
                   title={<Typography variant="h6" fontWeight={600}>Resource Prediction (24h)</Typography>}
@@ -205,11 +299,11 @@ const Prediction = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           <Grid size={{ xs: 12, lg: 4 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%' }}>
                 <CardHeader
                   title={<Typography variant="h6" fontWeight={600}>Auto-Scaling Forecast</Typography>}
@@ -222,7 +316,7 @@ const Prediction = () => {
                 />
                 <CardContent>
                   <ResponsiveContainer width="100%" height={260}>
-                    <AreaChart data={scalingEvents}>
+                    <AreaChart data={scalingData}>
                       <defs>
                         <linearGradient id="scaleGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={theme.palette.info.main} stopOpacity={0.3} />
@@ -238,12 +332,12 @@ const Prediction = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
         </Grid>
 
         {/* Anomaly Predictions */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card>
             <CardHeader
               title={
@@ -304,9 +398,8 @@ const Prediction = () => {
               </Grid>
             </CardContent>
           </Card>
-        </motion.div>
-      </Box>
-    </motion.div>
+        </ScrollSection>
+    </Box>
   );
 };
 

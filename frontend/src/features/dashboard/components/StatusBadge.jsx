@@ -1,7 +1,11 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 
 const StatusBadge = ({ status }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const getStatusConfig = () => {
     switch (status?.toLowerCase()) {
       case 'healthy':
@@ -9,24 +13,43 @@ const StatusBadge = ({ status }) => {
       case 'success':
       case 'active':
       case 'passed':
-        return { color: '#15803D', bg: '#DCFCE7', dot: '#22C55E' };
+        return {
+          color: isDark ? '#C7FF3A' : '#94C600',
+          bg: isDark ? alpha('#C7FF3A', 0.12) : '#ECFFB6',
+          dot: '#C7FF3A',
+        };
       case 'warning':
       case 'pending':
       case 'queued':
       case 'updating':
-        return { color: '#A16207', bg: '#FEF9C3', dot: '#F59E0B' };
+        return {
+          color: isDark ? '#FBBF24' : '#A16207',
+          bg: isDark ? alpha('#F59E0B', 0.12) : '#FEF9C3',
+          dot: '#F59E0B',
+        };
       case 'critical':
       case 'failed':
       case 'error':
       case 'deprecated':
-        return { color: '#B91C1C', bg: '#FEE2E2', dot: '#EF4444' };
+        return {
+          color: isDark ? '#F87171' : '#B91C1C',
+          bg: isDark ? alpha('#EF4444', 0.12) : '#FEE2E2',
+          dot: '#EF4444',
+        };
       case 'info':
       case 'resolved':
-        return { color: '#1D4ED8', bg: '#DBEAFE', dot: '#3B82F6' };
       case 'production':
-        return { color: '#15803D', bg: '#DCFCE7', dot: '#22C55E' };
+        return {
+          color: isDark ? '#C7FF3A' : '#94C600',
+          bg: isDark ? alpha('#C7FF3A', 0.12) : '#ECFFB6',
+          dot: '#C7FF3A',
+        };
       default:
-        return { color: '#374151', bg: '#F3F4F6', dot: '#9CA3AF' };
+        return {
+          color: theme.palette.text.secondary,
+          bg: isDark ? alpha('#FFFFFF', 0.06) : '#FCFBF8',
+          dot: theme.palette.text.disabled,
+        };
     }
   };
 
@@ -45,15 +68,7 @@ const StatusBadge = ({ status }) => {
         lineHeight: 1,
       }}
     >
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          bgcolor: config.dot,
-          flexShrink: 0,
-        }}
-      />
+      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: config.dot, flexShrink: 0 }} />
       <Typography
         sx={{
           color: config.color,

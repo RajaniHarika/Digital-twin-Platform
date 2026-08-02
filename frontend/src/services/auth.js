@@ -3,6 +3,10 @@
  * Connects to Spring Boot Auth Service via API Gateway.
  */
 import api from './api';
+import { getApiBaseUrl } from './config';
+import { canAccessRoute as checkRouteAccess, ROUTE_ROLES } from '../utils/navigation';
+
+const AUTH_URL = getApiBaseUrl();
 
 // Map frontend display role names → backend enum values
 const ROLE_TO_ENUM = {
@@ -18,10 +22,32 @@ const ROLE_TO_ENUM = {
 const ENUM_TO_ROLE = {
   'DEVOPS_ENGINEER': 'DevOps Engineer',
   'BACKEND_ENGINEER': 'Backend Engineer',
-  'CLOUD_ENGINEER': 'CLOUD_ENGINEER' && 'Cloud Engineer',
+  'CLOUD_ENGINEER': 'Cloud Engineer',
   'SRE_ENGINEER': 'Site Reliability Engineer (SRE)',
   'PROJECT_MANAGER': 'Project Manager',
   'ADMIN': 'Admin',
+};
+
+const AUTH_KEYS = ['isAuthenticated', 'authToken', 'userEmail', 'userRole', 'userName', 'loginTime'];
+
+const clearAuthStorage = () => {
+  AUTH_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+  sessionStorage.removeItem('loginSuccessSnackbar');
+};
+
+const getStorage = () => (localStorage.getItem('authToken') ? localStorage : sessionStorage);
+
+const persistUser = (user, storage) => {
+  storage.setItem('userEmail', user.email);
+  storage.setItem('userRole', user.role);
+  storage.setItem('userName', user.name);
+};
+
+const notifyAuthChange = () => {
+  window.dispatchEvent(new Event('auth:changed'));
 };
 
 export const authService = {
@@ -30,40 +56,50 @@ export const authService = {
    * Calls POST /auth/login on the backend via API Gateway.
    */
   login: async (email, password, role, rememberMe) => {
-    const response = await api.post('/auth/login', {
-      email: email?.toLowerCase().trim(),
-      password,
+    const backendRoleEnum = ROLE_TO_ENUM[role] || role;
+    const response = await fetch(`${AUTH_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email?.toLowerCase().trim(),
+        password,
+        role: backendRoleEnum,
+      }),
     });
 
-    const { token, role: backendRole, name, email: userEmail } = response.data;
-    const displayRole = ENUM_TO_ROLE[backendRole] || backendRole;
-
-    // Verify the role selected on the frontend matches the backend role
-    const expectedEnum = ROLE_TO_ENUM[role];
-    if (expectedEnum && expectedEnum !== backendRole) {
-      throw new Error('Selected role does not match your account role.');
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'Invalid email, password, or role.');
     }
 
-    // Set temporary login flag to trigger success Snackbar after redirect
+    const data = await response.json();
+    const token = data.token;
+    const backendRole = data.role || (data.user && data.user.role) || role;
+    const displayRole = ENUM_TO_ROLE[backendRole] || backendRole;
+    const userName = data.name || (data.user && data.user.name) || displayRole;
+    const userEmail = data.email || (data.user && data.user.email) || email;
+
+    const userObj = {
+      email: userEmail,
+      role: displayRole,
+      name: userName,
+    };
+
+    clearAuthStorage();
+    const storage = rememberMe ? localStorage : sessionStorage;
     sessionStorage.setItem('loginSuccessSnackbar', 'true');
     sessionStorage.setItem('sessionActive', 'true');
 
-    // Store auth info in localStorage
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userEmail', userEmail || email);
-    localStorage.setItem('userRole', displayRole);
-    localStorage.setItem('userName', name || displayRole);
-    localStorage.setItem('loginTime', new Date().toISOString());
+    storage.setItem('isAuthenticated', 'true');
+    storage.setItem('authToken', token);
+    persistUser(userObj, storage);
+    storage.setItem('loginTime', new Date().toISOString());
     localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
 
+    notifyAuthChange();
     return {
       success: true,
-      user: {
-        email: userEmail || email,
-        role: displayRole,
-        name: name || displayRole,
-      },
+      user: userObj,
     };
   },
 
@@ -86,55 +122,62 @@ export const authService = {
    * Logs out the current user and clears session state.
    */
   logout: () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('loginTime');
+    clearAuthStorage();
     localStorage.removeItem('rememberMe');
-    sessionStorage.removeItem('loginSuccessSnackbar');
+    notifyAuthChange();
   },
 
-  /**
-   * Checks if a user is currently authenticated.
-   * @returns {boolean}
-   */
-  isAuthenticated: () => {
-    return localStorage.getItem('isAuthenticated') === 'true' && !!localStorage.getItem('authToken');
-  },
+  getToken: () => localStorage.getItem('authToken') || sessionStorage.getItem('authToken'),
 
-  /**
-   * Gets the details of the currently logged-in user.
-   * @returns {object|null}
-   */
+  isAuthenticated: () =>
+    !!authService.getToken() &&
+    (localStorage.getItem('isAuthenticated') === 'true' || sessionStorage.getItem('isAuthenticated') === 'true'),
+
   getCurrentUser: () => {
     if (!authService.isAuthenticated()) return null;
+    const storage = getStorage();
     return {
-      email: localStorage.getItem('userEmail'),
-      role: localStorage.getItem('userRole'),
-      name: localStorage.getItem('userName') || localStorage.getItem('userRole') || 'User',
-      loginTime: localStorage.getItem('loginTime'),
+      email: storage.getItem('userEmail'),
+      role: storage.getItem('userRole'),
+      name: storage.getItem('userName') || storage.getItem('userRole') || 'User',
+      loginTime: storage.getItem('loginTime'),
     };
   },
 
-  /**
-   * Initializes the authentication state.
-   * If rememberMe was unchecked and sessionActive is missing (indicating browser restart), logs out the user.
-   */
   init: () => {
-    const isAuth = localStorage.getItem('isAuthenticated') === 'true';
-    const remember = localStorage.getItem('rememberMe') === 'true';
-    const hasActiveSession = sessionStorage.getItem('sessionActive') === 'true';
-
-    if (isAuth && !remember && !hasActiveSession) {
-      // Unremembered user reopened browser -> clear credentials
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    if (!rememberMe && !sessionStorage.getItem('authToken') && localStorage.getItem('isAuthenticated') === 'true') {
       authService.logout();
+      return;
     }
-
-    // Always mark current tab session as active
-    sessionStorage.setItem('sessionActive', 'true');
+    if (authService.isAuthenticated()) {
+      sessionStorage.setItem('sessionActive', 'true');
+    }
   },
+
+  verifyToken: async () => {
+    const token = authService.getToken();
+    if (!token) return false;
+    try {
+      const res = await fetch(`${AUTH_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Invalid token');
+      const user = await res.json();
+      if (user?.email) {
+        const storage = getStorage();
+        persistUser(user, storage);
+      }
+      return true;
+    } catch {
+      authService.logout();
+      return false;
+    }
+  },
+
+  canAccessRoute: (path, role) => checkRouteAccess(path, role),
 };
+
+export { ROUTE_ROLES };
 
 export default authService;

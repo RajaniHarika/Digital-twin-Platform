@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Drawer,
@@ -12,8 +12,8 @@ import {
   Typography,
   Toolbar,
   Divider,
-  useTheme,
-  alpha,
+  useMediaQuery,
+  Chip,
 } from '@mui/material';
 import {
   ChevronLeft,
@@ -27,146 +27,137 @@ import {
   History,
   Settings,
   Help,
+  Hub,
 } from '@mui/icons-material';
 import { useSidebar } from '../contexts/SidebarContext';
-import { SIDEBAR_ITEMS } from '../utils/constants';
+import authService from '../services/auth';
+import { BOTTOM_NAV_ITEMS, getSidebarItemsForRole } from '../utils/navigation';
+import { palette, shadows, radii } from '../theme/colors';
+import { useAppTheme } from '../theme/useAppTheme';
 
 const DRAWER_WIDTH = 280;
-const DRAWER_COLLAPSED_WIDTH = 72;
+const DRAWER_COLLAPSED_WIDTH = 80;
 
-const iconMap = {
-  Dashboard,
-  AccountTree,
-  Science,
-  Analytics,
-  Warning,
-  Payments,
-  History,
-  Settings,
-  Help,
-};
+const iconMap = { Dashboard, AccountTree, Science, Analytics, Warning, Payments, History, Settings, Help };
 
 const Sidebar = () => {
-  const theme = useTheme();
-  const { isOpen, toggle, setOpen } = useSidebar();
+  const { tokens, theme } = useAppTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const { isOpen, toggle, mobileOpen, setMobileOpen } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
-
   const drawerWidth = isOpen ? DRAWER_WIDTH : DRAWER_COLLAPSED_WIDTH;
+
+  const [user, setUser] = useState(() => authService.getCurrentUser());
+
+  useEffect(() => {
+    const syncUser = () => setUser(authService.getCurrentUser());
+    syncUser();
+    window.addEventListener('auth:changed', syncUser);
+    return () => window.removeEventListener('auth:changed', syncUser);
+  }, []);
+
+  const navItems = getSidebarItemsForRole(user?.role);
+
+  const isActive = (path) =>
+    path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(path);
 
   const handleNavigate = (path) => {
     navigate(path);
+    if (isMobile) setMobileOpen(false);
   };
 
-  const handleMouseEnter = () => {
-    setOpen(true);
-  };
+  const navButtonSx = (active) => ({
+    borderRadius: `${radii.lg}px`,
+    py: 1.4,
+    px: isOpen ? 2 : 1.5,
+    justifyContent: isOpen ? 'flex-start' : 'center',
+    bgcolor: active ? 'rgba(199, 255, 58, 0.14)' : 'transparent',
+    '&:hover': {
+      bgcolor: active ? 'rgba(199, 255, 58, 0.18)' : tokens.surfaceHover,
+    },
+    '& .MuiListItemIcon-root': {
+      color: active ? palette.accentDark : tokens.textMuted,
+      minWidth: isOpen ? 40 : 0,
+      justifyContent: 'center',
+    },
+  });
 
-  const handleMouseLeave = () => {
-    setOpen(false);
-  };
-
-  const isActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: drawerWidth,
-          boxSizing: 'border-box',
-          bgcolor: theme.palette.mode === 'dark' ? '#1E1E1E' : '#FFFFFF',
-          borderRight: `1px solid ${theme.palette.divider}`,
-          transition: 'width 0.3s ease',
-          overflowX: 'hidden',
-        },
-      }}
-      open={isOpen}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <Toolbar>
+  const drawerContent = (
+    <>
+      <Toolbar sx={{ px: isOpen ? 2.5 : 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {isOpen && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
                 sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 2,
-                  bgcolor: 'primary.main',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  bgcolor: palette.accent,
+                  display: 'grid',
+                  placeItems: 'center',
+                  boxShadow: shadows.button,
                 }}
               >
-                <AccountTree sx={{ color: 'white', fontSize: 20 }} />
+                <Hub sx={{ color: '#111111', fontSize: 20 }} />
               </Box>
               <Box>
-                <Typography variant="h6" fontWeight={700} color="primary">
+                <Typography variant="subtitle1" fontWeight={800} sx={{ color: tokens.text, lineHeight: 1.1 }}>
                   TwinDigital
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  DevOps Platform
+                <Typography variant="caption" sx={{ color: tokens.textMuted }}>
+                  Console
                 </Typography>
               </Box>
             </Box>
           )}
-          <IconButton onClick={toggle} sx={{ ml: 'auto' }}>
-            {isOpen ? <ChevronLeft /> : <ChevronRight />}
-          </IconButton>
+          {!isMobile && (
+            <IconButton onClick={toggle} sx={{ ml: 'auto' }}>
+              {isOpen ? <ChevronLeft /> : <ChevronRight />}
+            </IconButton>
+          )}
         </Box>
       </Toolbar>
+
+      {isOpen && user?.role && (
+        <Box sx={{ px: 2.5, pb: 1.5 }}>
+          <Chip
+            label={user.role}
+            size="small"
+            sx={{
+              height: 24,
+              fontSize: '0.6875rem',
+              fontWeight: 700,
+              bgcolor: 'rgba(199, 255, 58, 0.12)',
+              color: palette.accentDark,
+              border: `1px solid rgba(199, 255, 58, 0.28)`,
+            }}
+          />
+        </Box>
+      )}
 
       <Divider />
 
       <List sx={{ px: isOpen ? 2 : 1, py: 2 }}>
-        {SIDEBAR_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = iconMap[item.icon];
           const active = isActive(item.path);
 
           return (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => handleNavigate(item.path)}
-                selected={active}
-                sx={{
-                  borderRadius: 2,
-                  py: 1.5,
-                  px: 2,
-                  bgcolor: active ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                  '&:hover': {
-                    bgcolor: active
-                      ? alpha(theme.palette.primary.main, 0.15)
-                      : alpha(theme.palette.action.hover, 0.08),
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: active ? 'primary.main' : 'text.secondary',
-                  },
-                  '& .MuiTypography-root': {
-                    fontWeight: active ? 600 : 400,
-                    color: active ? 'primary.main' : 'text.primary',
-                  },
-                  justifyContent: isOpen ? 'flex-start' : 'center',
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: isOpen ? 2 : 0,
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon sx={{ fontSize: 22 }} />
-                </ListItemIcon>
-                {isOpen && <ListItemText primary={item.label} />}
+              <ListItemButton onClick={() => handleNavigate(item.path)} selected={active} sx={navButtonSx(active)}>
+                <ListItemIcon><Icon sx={{ fontSize: 22 }} /></ListItemIcon>
+                {isOpen && (
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: active ? 700 : 500,
+                      color: active ? tokens.text : tokens.textSecondary,
+                      fontSize: '0.9375rem',
+                    }}
+                  />
+                )}
               </ListItemButton>
             </ListItem>
           );
@@ -174,53 +165,56 @@ const Sidebar = () => {
       </List>
 
       <Box sx={{ flexGrow: 1 }} />
-
       <Divider />
-
       <List sx={{ px: isOpen ? 2 : 1, py: 2 }}>
-        {[
-          { path: '/settings', icon: 'Settings', label: 'Settings' },
-          { path: '/help', icon: 'Help', label: 'Help' },
-        ].map((item) => {
+        {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = iconMap[item.icon];
           const active = isActive(item.path);
-
           return (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => handleNavigate(item.path)}
-                selected={active}
-                sx={{
-                  borderRadius: 2,
-                  py: 1.5,
-                  px: 2,
-                  bgcolor: active ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                  '&:hover': {
-                    bgcolor: active
-                      ? alpha(theme.palette.primary.main, 0.15)
-                      : alpha(theme.palette.action.hover, 0.08),
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: active ? 'primary.main' : 'text.secondary',
-                  },
-                  justifyContent: isOpen ? 'flex-start' : 'center',
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: isOpen ? 2 : 0,
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon sx={{ fontSize: 22 }} />
-                </ListItemIcon>
-                {isOpen && <ListItemText primary={item.label} />}
+              <ListItemButton onClick={() => handleNavigate(item.path)} selected={active} sx={navButtonSx(active)}>
+                <ListItemIcon><Icon sx={{ fontSize: 22 }} /></ListItemIcon>
+                {isOpen && (
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: active ? 700 : 500,
+                      color: active ? tokens.text : tokens.textSecondary,
+                      fontSize: '0.9375rem',
+                    }}
+                  />
+                )}
               </ListItemButton>
             </ListItem>
           );
         })}
       </List>
+    </>
+  );
+
+  return (
+    <Drawer
+      variant={isMobile ? 'temporary' : 'permanent'}
+      open={isMobile ? mobileOpen : true}
+      onClose={() => setMobileOpen(false)}
+      ModalProps={{ keepMounted: true }}
+      sx={{
+        width: isMobile ? DRAWER_WIDTH : drawerWidth,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: isMobile ? DRAWER_WIDTH : drawerWidth,
+          boxSizing: 'border-box',
+          bgcolor: tokens.paper,
+          borderRight: `1px solid ${tokens.border}`,
+          transition: 'width 0.3s ease',
+          overflowX: 'hidden',
+          boxShadow: shadows.sm,
+          top: 72,
+          height: 'calc(100% - 72px)',
+        },
+      }}
+    >
+      {drawerContent}
     </Drawer>
   );
 };

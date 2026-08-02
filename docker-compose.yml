@@ -1,0 +1,10 @@
+services:
+  digital-twin:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      JWT_SECRET: ${JWT_SECRET:-digital-twin-platform-secret-key-2026}
+    restart: unless-stopped

@@ -2,8 +2,10 @@ import React from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import CloudCard from './CloudCard';
+import { useAppTheme } from '../../theme/useAppTheme';
 
 const CostAnalysis = ({ data }) => {
+  const { tokens } = useAppTheme();
   const total = data.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
@@ -27,7 +29,13 @@ const CostAnalysis = ({ data }) => {
                 </Pie>
                 <Tooltip
                   formatter={(value) => `$${value.toLocaleString()}`}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: `1px solid ${tokens.border}`,
+                    backgroundColor: tokens.tooltipBg,
+                    color: tokens.text,
+                    boxShadow: tokens.shadowSm,
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -36,10 +44,10 @@ const CostAnalysis = ({ data }) => {
         <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
-              <Typography sx={{ color: '#64748B', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>
+              <Typography sx={{ color: tokens.textLabel, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>
                 Total Cost
               </Typography>
-              <Typography sx={{ color: '#0F172A', fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2 }}>
+              <Typography sx={{ color: tokens.text, fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2 }}>
                 ${total.toLocaleString()}
               </Typography>
             </Box>
@@ -48,11 +56,11 @@ const CostAnalysis = ({ data }) => {
                 <Box key={item.name} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.color }} />
-                    <Typography sx={{ color: '#475569', fontSize: '0.75rem', fontWeight: 500 }}>
+                    <Typography sx={{ color: tokens.textLabel, fontSize: '0.75rem', fontWeight: 500 }}>
                       {item.name}
                     </Typography>
                   </Box>
-                  <Typography sx={{ color: '#0F172A', fontSize: '0.75rem', fontWeight: 600 }}>
+                  <Typography sx={{ color: tokens.text, fontSize: '0.75rem', fontWeight: 600 }}>
                     ${item.value.toLocaleString()}
                   </Typography>
                 </Box>

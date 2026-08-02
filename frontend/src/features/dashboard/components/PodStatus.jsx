@@ -2,47 +2,48 @@ import React from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import DashboardCard from './DashboardCard';
 import { CheckCircle, ErrorOutline, Warning, RestartAlt } from '@mui/icons-material';
+import { useAppTheme } from '../../../theme/useAppTheme';
 
-const PodStat = ({ label, value, total, colorHex, icon }) => {
+const PodStat = ({ label, value, total, colorHex, icon, tokens }) => {
   const percent = total > 0 ? (value / total) * 100 : 0;
   return (
     <Box
       sx={{
-        p: 2,
-        borderRadius: '12px',
-        border: '1px solid #F1F5F9',
+        p: 1.25,
+        borderRadius: '10px',
+        border: `1px solid ${tokens.border}`,
+        bgcolor: tokens.surfaceMuted,
         display: 'flex',
         alignItems: 'center',
-        gap: 1.5,
-        transition: 'background-color 0.15s',
-        '&:hover': { bgcolor: '#F8FAFC' },
+        gap: 1,
+        height: '100%',
       }}
     >
       <Box
         sx={{
-          width: 36,
-          height: 36,
-          borderRadius: '10px',
-          bgcolor: `${colorHex}12`,
+          width: 32,
+          height: 32,
+          borderRadius: '8px',
+          bgcolor: `${colorHex}18`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        {React.cloneElement(icon, { sx: { color: colorHex, fontSize: 18 } })}
+        {React.cloneElement(icon, { sx: { color: colorHex, fontSize: 16 } })}
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ color: '#64748B', fontSize: '0.7rem', fontWeight: 500 }}>{label}</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-          <Typography sx={{ color: '#0F172A', fontWeight: 700, fontSize: '1.2rem', lineHeight: 1 }}>{value}</Typography>
+        <Typography sx={{ color: tokens.textSecondary, fontSize: '0.65rem', fontWeight: 500 }}>{label}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.35 }}>
+          <Typography sx={{ color: tokens.text, fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.1 }}>{value}</Typography>
           {total !== undefined && (
-            <Typography sx={{ color: '#94A3B8', fontSize: '0.7rem' }}>/ {total}</Typography>
+            <Typography sx={{ color: tokens.textMuted, fontSize: '0.65rem' }}>/ {total}</Typography>
           )}
         </Box>
       </Box>
       {total !== undefined && (
-        <Box sx={{ width: 40, height: 4, bgcolor: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+        <Box sx={{ width: 36, height: 3, bgcolor: tokens.surface, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
           <Box sx={{ height: '100%', width: `${Math.min(percent, 100)}%`, bgcolor: colorHex, borderRadius: 2 }} />
         </Box>
       )}
@@ -51,22 +52,24 @@ const PodStat = ({ label, value, total, colorHex, icon }) => {
 };
 
 const PodStatus = ({ data }) => {
-  const totalPods = data.running + data.pending + data.failed + data.crashLoopBackOff;
+  const { tokens } = useAppTheme();
+  const podData = data || {};
+  const totalPods = (podData.running || 0) + (podData.pending || 0) + (podData.failed || 0) + (podData.crashLoopBackOff || 0);
 
   return (
-    <DashboardCard title="Pod Status">
-      <Grid container spacing={1.5}>
+    <DashboardCard title="Pod Status" compact>
+      <Grid container spacing={1}>
         <Grid size={{ xs: 6 }}>
-          <PodStat label="Running" value={data.running} total={totalPods} colorHex="#22C55E" icon={<CheckCircle />} />
+          <PodStat label="Running" value={podData.running || 0} total={totalPods} colorHex="#22C55E" icon={<CheckCircle />} tokens={tokens} />
         </Grid>
         <Grid size={{ xs: 6 }}>
-          <PodStat label="Pending" value={data.pending} total={totalPods} colorHex="#F59E0B" icon={<Warning />} />
+          <PodStat label="Pending" value={podData.pending || 0} total={totalPods} colorHex="#F59E0B" icon={<Warning />} tokens={tokens} />
         </Grid>
         <Grid size={{ xs: 6 }}>
-          <PodStat label="Failed" value={data.failed} total={totalPods} colorHex="#EF4444" icon={<ErrorOutline />} />
+          <PodStat label="Failed" value={podData.failed || 0} total={totalPods} colorHex="#EF4444" icon={<ErrorOutline />} tokens={tokens} />
         </Grid>
         <Grid size={{ xs: 6 }}>
-          <PodStat label="Restarts (24h)" value={data.restartCount} colorHex="#6366F1" icon={<RestartAlt />} />
+          <PodStat label="Restarts (24h)" value={podData.restartCount || 0} colorHex={tokens.accentDark} icon={<RestartAlt />} tokens={tokens} />
         </Grid>
       </Grid>
     </DashboardCard>

@@ -26,10 +26,10 @@ export const cloudMockData = {
     { id: 'node-api-01', state: 'running', cpu: 95, memory: 88, storage: 70, network: 85 },
   ],
   costAnalysis: [
-    { name: 'Compute', value: 12500, color: '#3B82F6' },
-    { name: 'Database', value: 6200, color: '#8B5CF6' },
-    { name: 'Storage', value: 3800, color: '#10B981' },
-    { name: 'Networking', value: 1500, color: '#F59E0B' },
+    { name: 'Compute', value: 12500, color: '#C7FF3A' },
+    { name: 'Database', value: 6200, color: '#94C600' },
+    { name: 'Storage', value: 3800, color: '#111111' },
+    { name: 'Networking', value: 1500, color: '#565656' },
   ],
   storageUsage: {
     total: 150,
@@ -37,9 +37,9 @@ export const cloudMockData = {
     free: 25,
     percentage: 83.33,
     breakdown: [
-      { type: 'Block Storage', value: 85, color: '#3B82F6' },
-      { type: 'Object Storage', value: 25, color: '#8B5CF6' },
-      { type: 'Archive', value: 15, color: '#10B981' },
+      { type: 'Block Storage', value: 85, color: '#C7FF3A' },
+      { type: 'Object Storage', value: 25, color: '#94C600' },
+      { type: 'Archive', value: 15, color: '#111111' },
     ]
   },
   networkTraffic: [

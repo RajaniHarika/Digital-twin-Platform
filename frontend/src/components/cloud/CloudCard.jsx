@@ -1,66 +1,39 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
+import { scrollViewport, scrollRevealTransition } from '../../theme/motion';
+import { useAppTheme } from '../../theme/useAppTheme';
 
-const CloudCard = ({ title, action, children, sx = {}, noPadding = false }) => {
+const CloudCard = ({ title, action, children, sx = {}, noPadding = false, compact = false }) => {
+  const { tokens } = useAppTheme();
+
   return (
     <Box
       component={motion.div}
       initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={scrollViewport}
+      transition={scrollRevealTransition()}
       sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: '#FFFFFF',
-        borderRadius: '16px',
-        border: '1px solid #E2E8F0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        bgcolor: tokens.paper,
+        borderRadius: `${tokens.radii.xl}px`,
+        border: `1px solid ${tokens.border}`,
+        boxShadow: tokens.shadow,
         overflow: 'hidden',
-        transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-        '&:hover': {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-          borderColor: '#CBD5E1',
-        },
+        transition: tokens.transitions.default,
+        '&:hover': { boxShadow: tokens.shadowHover, transform: 'translateY(-3px)' },
         ...sx,
       }}
     >
       {title && (
-        <Box
-          sx={{
-            px: 2.5,
-            py: 1.75,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid #F1F5F9',
-          }}
-        >
-          <Typography
-            sx={{
-              color: '#334155',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-            }}
-          >
+        <Box sx={{ px: compact ? 2 : 2.5, py: compact ? 1.25 : 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${tokens.border}` }}>
+          <Typography sx={{ color: tokens.textLabel, fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             {title}
           </Typography>
           {action && <Box>{action}</Box>}
         </Box>
       )}
-      <Box
-        sx={{
-          p: noPadding ? 0 : 2.5,
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {children}
-      </Box>
+      <Box sx={{ p: noPadding ? 0 : compact ? { xs: 1.5, md: 2 } : { xs: 2, md: 2.5 } }}>{children}</Box>
     </Box>
   );
 };
