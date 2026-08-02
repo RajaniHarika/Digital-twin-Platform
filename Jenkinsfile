@@ -96,9 +96,9 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sshagent(['k8s-master-ssh-key']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@${K8S_MASTER_IP} '
+                withCredentials([sshUserPrivateKey(credentialsId: 'k8s-master-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''
+                    ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$K8S_MASTER_IP '
                         cd Digital-twin-Platform && \\
                         git pull origin develop && \\
                         kubectl apply -f infrastructure/k8s/statefulsets && \\
@@ -106,7 +106,7 @@ pipeline {
                         kubectl apply -f infrastructure/k8s/services && \\
                         kubectl rollout restart deployment -n digitaltwin
                     '
-                    """
+                    '''
                 }
             }
         }
