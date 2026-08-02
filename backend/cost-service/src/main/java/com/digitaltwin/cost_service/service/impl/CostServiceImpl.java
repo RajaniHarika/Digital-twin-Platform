@@ -8,6 +8,8 @@ import com.digitaltwin.cost_service.exception.ResourceNotFoundException;
 import com.digitaltwin.cost_service.repository.CostRepository;
 import com.digitaltwin.cost_service.service.CostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -68,6 +70,7 @@ public class CostServiceImpl implements CostService {
     }
 
     @Override
+    @Cacheable(value = "costs", key = "#id")
     public CostResponse getCostById(Long id) {
         ResourceCost entity = costRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cost record not found with id: " + id));
@@ -75,6 +78,7 @@ public class CostServiceImpl implements CostService {
     }
 
     @Override
+    @CacheEvict(value = "costs", key = "#id")
     public CostResponse updateCostRecord(Long id, CostRequest request) {
         ResourceCost existing = costRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cost record not found with id: " + id));
@@ -93,6 +97,7 @@ public class CostServiceImpl implements CostService {
     }
 
     @Override
+    @CacheEvict(value = "costs", key = "#id")
     public void deleteCostRecord(Long id) {
         if (!costRepository.existsById(id)) {
             throw new ResourceNotFoundException("Cost record not found with id: " + id);

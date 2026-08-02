@@ -1,0 +1,79 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+      routes:
+        # Auth Service (public endpoints /auth/**)
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/auth/**
+
+        # Cluster Sync Service (/api/clusters/**, /api/kubernetes/**)
+        - id: cluster-sync-service
+          uri: ${CLUSTER_SYNC_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/clusters/**,/api/kubernetes/**
+          filters:
+            - AuthenticationFilter
+
+        # Topology Service (/api/v1/topology/**, /api/topology/**)
+        - id: topology-service
+          uri: ${TOPOLOGY_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/topology/**,/api/topology/**
+          filters:
+            - AuthenticationFilter
+
+        # Simulation Service (/api/v1/simulations/**, /api/simulations/**, /api/simulation/**)
+        - id: simulation-service
+          uri: ${SIMULATION_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/simulations/**,/api/simulations/**,/api/simulation/**
+          filters:
+            - AuthenticationFilter
+
+        # Risk Service (/api/v1/risks/**, /api/risks/**, /api/risk/**)
+        - id: risk-service
+          uri: ${RISK_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/risks/**,/api/risks/**,/api/risk/**
+          filters:
+            - AuthenticationFilter
+
+        # Cost Service (/api/costs/**)
+        - id: cost-service
+          uri: ${COST_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/costs/**
+          filters:
+            - AuthenticationFilter
+
+jwt:
+  secret: mySuperSecretKeyForDigitalTwinPlatformJwtAuthentication123456
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always

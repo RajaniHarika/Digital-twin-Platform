@@ -8,6 +8,8 @@ import com.digitaltwin.simulation_service.repository.SimulationRepository;
 import com.digitaltwin.simulation_service.service.SimulationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -51,6 +53,7 @@ public class SimulationServiceImpl implements SimulationService {
     }
 
     @Override
+    @Cacheable(value = "simulations", key = "#id")
     public SimulationResponse getSimulationById(Long id) {
 
         log.info("Fetching simulation with ID: {}", id);
@@ -63,6 +66,7 @@ public class SimulationServiceImpl implements SimulationService {
     }
 
     @Override
+    @CacheEvict(value = "simulations", key = "#id")
     public SimulationResponse updateSimulation(Long id, SimulationRequest request) {
 
         log.info("Updating simulation with ID: {}", id);
@@ -84,6 +88,7 @@ public class SimulationServiceImpl implements SimulationService {
     }
 
     @Override
+    @CacheEvict(value = "simulations", key = "#id")
     public void deleteSimulation(Long id) {
 
         log.info("Deleting simulation with ID: {}", id);

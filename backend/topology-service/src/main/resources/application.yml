@@ -1,0 +1,48 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: topology-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/digital_twin_platform
+    username: root
+    password: Koushik@2004
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+cluster:
+  sync:
+    base-url: ${CLUSTER_SYNC_BASE_URL:http://localhost:8083}
+
+feign:
+  circuitbreaker:
+    enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      cluster-sync-service:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3

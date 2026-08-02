@@ -7,6 +7,8 @@ import com.digitaltwin.risk_service.exception.ResourceNotFoundException;
 import com.digitaltwin.risk_service.repository.RiskRepository;
 import com.digitaltwin.risk_service.service.RiskService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -57,6 +59,7 @@ public class RiskServiceImpl implements RiskService {
     }
 
     @Override
+    @Cacheable(value = "risks", key = "#id")
     public RiskResponse getRiskById(Long id) {
 
         log.info("Fetching risk with ID: {}", id);
@@ -69,6 +72,7 @@ public class RiskServiceImpl implements RiskService {
     }
 
     @Override
+    @CacheEvict(value = "risks", key = "#id")
     public RiskResponse updateRisk(Long id, RiskRequest request) {
 
         log.info("Updating risk with ID: {}", id);
@@ -92,6 +96,7 @@ public class RiskServiceImpl implements RiskService {
     }
 
     @Override
+    @CacheEvict(value = "risks", key = "#id")
     public void deleteRisk(Long id) {
 
         log.info("Deleting risk with ID: {}", id);
