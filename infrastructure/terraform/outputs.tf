@@ -43,6 +43,11 @@ output "grafana_url" {
   value       = "http://${module.compute.worker_public_ip}:30300"
 }
 
+output "jenkins_url" {
+  value       = "http://${module.compute.jenkins_public_ip}:8080"
+  description = "Jenkins CI/CD Server URL"
+}
+
 output "ecr_repository_urls" {
   description = "Map of service name to ECR repository URL"
   value       = module.ecr.repository_urls

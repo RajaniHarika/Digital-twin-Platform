@@ -8,4 +8,12 @@ variable "ubuntu_ami"            { type = string }
 variable "key_pair_name"         { type = string }
 variable "subnet_id"             { type = string }
 variable "master_sg_id"          { type = string }
-variable "worker_sg_id"          { type = string }
+variable "worker_sg_id" {
+  description = "Security Group ID for Kubernetes Worker Node"
+  type        = string
+}
+
+variable "jenkins_sg_id" {
+  description = "Security Group ID for Jenkins Server"
+  type        = string
+}

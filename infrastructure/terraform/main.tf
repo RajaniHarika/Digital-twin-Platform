@@ -32,6 +32,7 @@ module "compute" {
   subnet_id            = module.networking.public_subnet_ids[0]
   master_sg_id         = module.security.master_sg_id
   worker_sg_id         = module.security.worker_sg_id
+  jenkins_sg_id        = module.security.jenkins_sg_id
 }
 
 module "ecr" {

@@ -8,6 +8,9 @@ REGISTRY_URL="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 echo "Logging in to Amazon ECR: $REGISTRY_URL"
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $REGISTRY_URL
 
+echo "Setting execute permissions on Maven wrappers..."
+find . -name "mvnw" -type f -exec chmod +x {} \;
+
 declare -a SERVICES=(
     "frontend:frontend"
     "api-gateway:backend/api-gateway"

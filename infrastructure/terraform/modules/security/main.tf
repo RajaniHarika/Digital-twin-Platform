@@ -135,3 +135,44 @@ resource "aws_security_group" "worker" {
     Name = "${var.project_name}-${var.environment}-worker-sg"
   }
 }
+
+resource "aws_security_group" "jenkins" {
+  name        = "${var.project_name}-${var.environment}-jenkins-sg"
+  description = "Security group for Jenkins server"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.your_ip_cidr]
+  }
+
+  ingress {
+    description = "Jenkins Web UI"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    description = "All internal VPC traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-jenkins-sg"
+  }
+}
