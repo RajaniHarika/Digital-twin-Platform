@@ -19,7 +19,7 @@ spec:
         - name: risk-service
           image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/risk-service:latest
           ports:
-            - containerPort: 8085
+            - containerPort: 8086
           envFrom:
             - configMapRef:
                 name: app-config
@@ -35,13 +35,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8085
+              port: 8086
             initialDelaySeconds: 60
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8085
+              port: 8086
             initialDelaySeconds: 30
             periodSeconds: 10
 ---
@@ -54,6 +54,6 @@ spec:
   selector:
     app: risk-service
   ports:
-    - port: 8085
-      targetPort: 8085
+    - port: 8086
+      targetPort: 8086
   type: ClusterIP

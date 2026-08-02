@@ -20,7 +20,7 @@ spec:
         - name: cluster-sync
           image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/cluster-sync:latest
           ports:
-            - containerPort: 8082
+            - containerPort: 8083
           envFrom:
             - configMapRef:
                 name: app-config
@@ -36,13 +36,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8082
+              port: 8083
             initialDelaySeconds: 60
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8082
+              port: 8083
             initialDelaySeconds: 30
             periodSeconds: 10
 ---
@@ -55,6 +55,6 @@ spec:
   selector:
     app: cluster-sync
   ports:
-    - port: 8082
-      targetPort: 8082
+    - port: 8083
+      targetPort: 8083
   type: ClusterIP
