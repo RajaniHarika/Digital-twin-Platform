@@ -67,7 +67,7 @@ pipeline {
                         'simulation-service': 'backend/simulation-service',
                         'cost-service': 'backend/cost-service',
                         'risk-service': 'backend/risk-service',
-                        'cluster-sync': 'backend/cluster-sync',
+                        'cluster-sync-service': 'backend/cluster-sync-service',
                         'ai-service': 'ai-service'
                     ]
 
