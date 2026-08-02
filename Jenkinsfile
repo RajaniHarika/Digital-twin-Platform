@@ -103,7 +103,6 @@ pipeline {
                         git pull origin develop && \\
                         kubectl apply -f infrastructure/k8s/statefulsets && \\
                         kubectl apply -f infrastructure/k8s/deployments && \\
-                        kubectl apply -f infrastructure/k8s/services && \\
                         kubectl rollout restart deployment -n digitaltwin
                     '
                     '''
