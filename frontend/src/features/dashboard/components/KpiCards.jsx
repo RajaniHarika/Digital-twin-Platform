@@ -6,6 +6,7 @@ import {
   CheckCircleOutline, RocketLaunch, Speed, Memory, NotificationsActive, AltRoute,
 } from '@mui/icons-material';
 import { useAppTheme } from '../../../theme/useAppTheme';
+import { scrollViewport, scrollRevealTransition } from '../../../theme/motion';
 
 const generateSparkline = (base, volatility) =>
   Array.from({ length: 12 }).map((_, i) => ({
@@ -16,8 +17,9 @@ const KpiWidget = ({ title, value, colorHex, icon, sparklineData, delay = 0, tok
   <Box
     component={motion.div}
     initial={{ opacity: 0, y: 8 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3, delay }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={scrollViewport}
+    transition={scrollRevealTransition(delay)}
     sx={{
       p: { xs: 1.75, md: 2 },
       borderRadius: `${tokens.radii.lg}px`,

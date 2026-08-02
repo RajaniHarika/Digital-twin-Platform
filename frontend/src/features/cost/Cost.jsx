@@ -40,16 +40,7 @@ import {
 import { formatCurrency } from '../../utils/formatters';
 import { dashboardApi } from '../../services/api';
 import ServiceCostTable from './components/ServiceCostTable';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+import ScrollSection from '../../components/ui/ScrollSection';
 
 const buildMonthlyTrend = (total, budget) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
@@ -183,15 +174,14 @@ const Cost = () => {
   const potentialSavings = optimizations.reduce((acc, o) => acc + o.savings, 0);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box>
+    <Box>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
             {error}
           </Alert>
         )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -207,10 +197,10 @@ const Cost = () => {
               </IconButton>
             </Tooltip>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Summary Cards */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {[
               { label: 'Monthly Cost', value: formatCurrency(totalMonthlyCost), icon: <Payments />, color: theme.palette.primary.main, sub: 'Current billing period' },
@@ -233,12 +223,12 @@ const Cost = () => {
               </Grid>
             ))}
           </Grid>
-        </motion.div>
+        </ScrollSection>
 
         {/* Monthly Trend + Category Breakdown */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, md: 8 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>Monthly Cost vs Budget</Typography>} />
                 <CardContent>
@@ -260,11 +250,11 @@ const Cost = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           <Grid size={{ xs: 12, md: 4 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%' }}>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>Cost by Category</Typography>} />
                 <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -292,12 +282,12 @@ const Cost = () => {
                   </Box>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
         </Grid>
 
         {/* Daily Breakdown */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card sx={{ mb: 4 }}>
             <CardHeader title={<Typography variant="h6" fontWeight={600}>Daily Cost Breakdown (This Week)</Typography>} />
             <CardContent>
@@ -316,23 +306,23 @@ const Cost = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollSection>
 
         {/* Service Costs Table + Optimization Opportunities */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 7 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>Cost per Service</Typography>} />
                 <CardContent sx={{ pt: 0 }}>
                   <ServiceCostTable serviceCosts={serviceCosts} />
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           <Grid size={{ xs: 12, md: 5 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card>
                 <CardHeader
                   title={
@@ -378,11 +368,10 @@ const Cost = () => {
                   </Box>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
         </Grid>
       </Box>
-    </motion.div>
   );
 };
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import { motion, useInView } from 'framer-motion';
-import { ease } from '../../theme/motion';
+import { ease, scrollViewport } from '../../theme/motion';
 
 const ScrollReveal = ({
   children,
@@ -14,17 +14,29 @@ const ScrollReveal = ({
   duration = 0.65,
 }) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once, margin: '-60px' });
+  const isInView = useInView(ref, { ...scrollViewport, once });
+
+  const hidden = {
+    opacity: 0,
+    y,
+    x,
+    scale: scale === 1 ? 1 : scale - 0.04,
+    filter: blur ? `blur(${blur}px)` : 'none',
+  };
+
+  const visible = {
+    opacity: 1,
+    y: 0,
+    x: 0,
+    scale: 1,
+    filter: 'blur(0px)',
+  };
 
   return (
     <Box ref={ref}>
       <motion.div
-        animate={
-          isInView
-            ? { opacity: 1, y: 0, x: 0, scale: 1, filter: 'blur(0px)' }
-            : undefined
-        }
-        initial={{ opacity: 1, y: 0, x: 0, scale: 1, filter: 'none' }}
+        initial={hidden}
+        animate={isInView ? visible : hidden}
         transition={{ duration, delay, ease: ease.out }}
       >
         {children}
@@ -35,7 +47,7 @@ const ScrollReveal = ({
 
 export const AnimatedCounter = ({ value, suffix = '', duration = 1.8 }) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
+  const isInView = useInView(ref, { ...scrollViewport, once: true });
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {

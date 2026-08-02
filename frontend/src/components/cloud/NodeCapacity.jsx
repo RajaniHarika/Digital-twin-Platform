@@ -4,6 +4,7 @@ import { Dns, CheckCircle, Warning, Cancel } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import CloudCard from './CloudCard';
 import { useAppTheme } from '../../theme/useAppTheme';
+import { scrollViewport, scrollRevealTransition } from '../../theme/motion';
 
 const CapacityBar = ({ value, colorHex, tokens }) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -59,8 +60,9 @@ const SummaryCard = ({ icon, label, count, colorHex, delay = 0, tokens }) => (
   <Box
     component={motion.div}
     initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.25, delay }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={scrollViewport}
+    transition={scrollRevealTransition(delay)}
     sx={{
       display: 'flex',
       alignItems: 'center',

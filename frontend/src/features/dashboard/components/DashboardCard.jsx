@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useAppTheme } from '../../../theme/useAppTheme';
+import { scrollViewport, scrollRevealTransition } from '../../../theme/motion';
 
 const DashboardCard = ({ title, action, children, sx = {}, noPadding = false, compact = false }) => {
   const { tokens } = useAppTheme();
@@ -10,8 +11,9 @@ const DashboardCard = ({ title, action, children, sx = {}, noPadding = false, co
     <Box
       component={motion.div}
       initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={scrollViewport}
+      transition={scrollRevealTransition()}
       sx={{
         bgcolor: tokens.paper,
         borderRadius: `${tokens.radii.xl}px`,

@@ -3,13 +3,15 @@ import { Box, Typography, Grid } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Storage, Dns, AttachMoney, Memory } from '@mui/icons-material';
 import { useAppTheme } from '../../theme/useAppTheme';
+import { scrollViewport, scrollRevealTransition } from '../../theme/motion';
 
 const KpiWidget = ({ title, value, subText, colorHex, icon, delay = 0, tokens }) => (
   <Box
     component={motion.div}
     initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3, delay }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={scrollViewport}
+    transition={scrollRevealTransition(delay)}
     sx={{
       p: 2.5,
       borderRadius: `${tokens.radii.xl}px`,

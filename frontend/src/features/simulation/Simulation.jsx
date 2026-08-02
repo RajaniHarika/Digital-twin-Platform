@@ -45,16 +45,7 @@ import { PageSkeleton } from '../../components/LoadingSkeleton';
 import { dashboardApi } from '../../services/api';
 import { getRelativeTime, formatDuration } from '../../utils/formatters';
 import NewSimulationDialog from './components/NewSimulationDialog';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+import ScrollSection from '../../components/ui/ScrollSection';
 
 const radarData = [
   { subject: 'Reliability', A: 86, fullMark: 100 },
@@ -145,15 +136,14 @@ const Simulation = () => {
   if (loading) return <PageSkeleton />;
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box>
+    <Box>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
             {error}
           </Alert>
         )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -182,10 +172,10 @@ const Simulation = () => {
               </Tooltip>
             </Box>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Stats */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {[
               { label: 'Total Simulations', value: stats.total, color: theme.palette.primary.main, icon: <Science /> },
@@ -210,12 +200,12 @@ const Simulation = () => {
               </Grid>
             ))}
           </Grid>
-        </motion.div>
+        </ScrollSection>
 
         {/* Charts Row */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, md: 7 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>Risk Score by Simulation</Typography>} />
                 <CardContent>
@@ -240,11 +230,11 @@ const Simulation = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           <Grid size={{ xs: 12, md: 5 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%' }}>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>System Health Radar</Typography>} />
                 <CardContent>
@@ -264,12 +254,12 @@ const Simulation = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
         </Grid>
 
         {/* Simulation List */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card>
             <CardHeader title={<Typography variant="h6" fontWeight={600}>Simulation History</Typography>} />
             <CardContent sx={{ pt: 0 }}>
@@ -349,7 +339,7 @@ const Simulation = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollSection>
 
         {/* New Simulation Dialog */}
         <NewSimulationDialog
@@ -361,8 +351,7 @@ const Simulation = () => {
           newSim={newSim}
           setNewSim={setNewSim}
         />
-      </Box>
-    </motion.div>
+    </Box>
   );
 };
 

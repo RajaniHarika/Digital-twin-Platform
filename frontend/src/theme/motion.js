@@ -56,6 +56,15 @@ export const pageTransition = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.3, ease: ease.inOut } },
 };
 
+/** Trigger reveal when section enters viewport while scrolling */
+export const scrollViewport = { once: true, amount: 0.18, margin: '0px 0px -40px 0px' };
+
+export const scrollRevealTransition = (delay = 0) => ({
+  duration: 0.45,
+  delay,
+  ease: ease.out,
+});
+
 export const cardHover = {
   rest: { y: 0, boxShadow: '0 10px 35px rgba(0,0,0,0.05)' },
   hover: {

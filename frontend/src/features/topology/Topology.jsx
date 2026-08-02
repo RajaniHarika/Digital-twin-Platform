@@ -37,16 +37,7 @@ import { topologyApi } from '../../services/api';
 import StatusChip from '../../components/StatusChip';
 import EmptyState from '../../components/EmptyState';
 import { PageSkeleton } from '../../components/LoadingSkeleton';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+import ScrollSection from '../../components/ui/ScrollSection';
 
 const typeIcons = {
   gateway: <Hub sx={{ fontSize: 28 }} />,
@@ -229,15 +220,14 @@ const Topology = () => {
   };
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box>
+    <Box>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
             {error}
           </Alert>
         )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -264,10 +254,10 @@ const Topology = () => {
               </Tooltip>
             </Box>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Status Overview */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {[
               { label: 'Total Nodes', value: nodes.length, color: theme.palette.primary.main },
@@ -288,7 +278,7 @@ const Topology = () => {
               </Grid>
             ))}
           </Grid>
-        </motion.div>
+        </ScrollSection>
 
         {/* Node Grid / List */}
         {nodes.length === 0 ? (
@@ -307,9 +297,9 @@ const Topology = () => {
             <Grid container spacing={2}>
               {nodes.map((node) => (
                 <Grid size={{ xs: 12, sm: 6, md: selectedNode ? 6 : 4 }} key={node.id}>
-                  <motion.div variants={itemVariants} whileHover={{ scale: 1.02 }}>
+                  <ScrollSection whileHover={{ scale: 1.02 }}>
                     {renderNodeCard(node)}
-                  </motion.div>
+                  </ScrollSection>
                 </Grid>
               ))}
             </Grid>
@@ -411,8 +401,7 @@ const Topology = () => {
           )}
         </Grid>
         )}
-      </Box>
-    </motion.div>
+    </Box>
   );
 };
 

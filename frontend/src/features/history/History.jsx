@@ -39,17 +39,8 @@ import { motion } from 'framer-motion';
 import StatusChip from '../../components/StatusChip';
 import EmptyState from '../../components/EmptyState';
 import { formatDuration, formatDateTime } from '../../utils/formatters';
+import ScrollSection from '../../components/ui/ScrollSection';
 import { dashboardApi } from '../../services/api';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
 
 const MOCK_HISTORY_ITEMS = [
   { id: 'evt-001', type: 'deployment', title: 'Payment Service v2.3.1 Deployed', status: 'success', service: 'payment-service', user: 'john.doe', timestamp: '2026-07-08T10:30:00Z', duration: 180, details: 'Rolling update completed. 0 errors during rollout.' },
@@ -133,15 +124,14 @@ const History = () => {
   };
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box>
+    <Box>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
             {error}
           </Alert>
         )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -157,10 +147,10 @@ const History = () => {
               </IconButton>
             </Tooltip>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Stats */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {[
               { label: 'Deployments', value: stats.deployments, ...typeConfig.deployment },
@@ -183,10 +173,10 @@ const History = () => {
               </Grid>
             ))}
           </Grid>
-        </motion.div>
+        </ScrollSection>
 
         {/* Filters */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ py: '12px !important' }}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -232,7 +222,7 @@ const History = () => {
               </Box>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollSection>
 
         {/* Timeline */}
         {filteredItems.length === 0 ? (
@@ -247,9 +237,8 @@ const History = () => {
           {paginatedItems.map((item) => {
             const config = typeConfig[item.type] || typeConfig.deployment;
             return (
-              <motion.div
+              <ScrollSection
                 key={item.id}
-                variants={itemVariants}
                 whileHover={{ scale: 1.003 }}
               >
                 <Card
@@ -306,7 +295,7 @@ const History = () => {
                     </Grid>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </ScrollSection>
             );
           })}
         </Box>
@@ -314,7 +303,7 @@ const History = () => {
 
         {/* Pagination */}
         {filteredItems.length > 0 && totalPages > 1 && (
-          <motion.div variants={itemVariants}>
+          <ScrollSection>
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Pagination
                 count={totalPages}
@@ -324,10 +313,9 @@ const History = () => {
                 shape="rounded"
               />
             </Box>
-          </motion.div>
+          </ScrollSection>
         )}
-      </Box>
-    </motion.div>
+    </Box>
   );
 };
 

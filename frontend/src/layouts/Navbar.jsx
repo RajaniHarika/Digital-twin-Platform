@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -8,7 +8,7 @@ import {
   Box,
   Badge,
   TextField,
-  InputAdornment,
+  Autocomplete,
   Menu,
   MenuItem,
   Divider,
@@ -36,7 +36,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import authService from '../services/auth';
 import { palette, radii } from '../theme/colors';
-import { getSearchableNavItemsForRole } from '../utils/navigation';
+import { searchNavItemsForRole, getSearchableNavItemsForRole } from '../utils/navigation';
 
 const NAVBAR_HEIGHT = 72;
 
@@ -76,17 +76,36 @@ const Navbar = () => {
     return () => window.removeEventListener('auth:changed', syncUser);
   }, []);
 
-  const navItems = getSearchableNavItemsForRole(currentUser.role);
+  const allNavItems = useMemo(
+    () => getSearchableNavItemsForRole(currentUser.role),
+    [currentUser.role]
+  );
+
+  const searchResults = useMemo(
+    () => searchNavItemsForRole(currentUser.role, searchQuery),
+    [currentUser.role, searchQuery]
+  );
+
   const currentBreadcrumb = breadcrumbs[location.pathname] || { label: 'Dashboard' };
 
+  const navigateToResult = (path) => {
+    navigate(path);
+    setSearchOpen(false);
+    setSearchQuery('');
+  };
+
+  const handleSearchSubmit = () => {
+    if (!searchQuery.trim() || searchResults.length === 0) return;
+    navigateToResult(searchResults[0].path);
+  };
+
   const handleSearchKeyDown = (e) => {
-    if (e.key !== 'Enter' || !searchQuery.trim()) return;
-    const q = searchQuery.toLowerCase();
-    const match = navItems.find((item) => item.label.toLowerCase().includes(q) || item.path.includes(q));
-    if (match) {
-      navigate(match.path);
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearchSubmit();
+    }
+    if (e.key === 'Escape') {
       setSearchOpen(false);
-      setSearchQuery('');
     }
   };
 
@@ -115,6 +134,62 @@ const Navbar = () => {
     markAsRead(id);
     setNotificationAnchorEl(null);
   };
+
+  const searchFieldSx = {
+    width: { sm: 260, md: 340 },
+    '& .MuiOutlinedInput-root': {
+      borderRadius: `${radii.lg}px`,
+      bgcolor: isDark ? alpha('#FFFFFF', 0.04) : palette.background,
+      color: 'text.primary',
+    },
+  };
+
+  const renderSearchInput = ({ fullWidth = false } = {}) => (
+    <Autocomplete
+      size="small"
+      options={allNavItems}
+      filterOptions={(_, { inputValue }) => searchNavItemsForRole(currentUser.role, inputValue)}
+      getOptionLabel={(option) => option.label}
+      isOptionEqualToValue={(option, value) => option.path === value.path}
+      inputValue={searchQuery}
+      onInputChange={(_, value) => setSearchQuery(value)}
+      onChange={(_, value) => {
+        if (value) navigateToResult(value.path);
+      }}
+      noOptionsText="No pages found"
+      clearOnBlur={false}
+      openOnFocus
+      renderInput={(autocompleteParams) => (
+        <TextField
+          {...autocompleteParams}
+          placeholder="Search pages..."
+          onKeyDown={handleSearchKeyDown}
+          autoFocus={fullWidth}
+          InputProps={{
+            ...autocompleteParams.InputProps,
+            startAdornment: (
+              <>
+                <Search sx={{ color: 'text.secondary', fontSize: 20, ml: 1, mr: 0.5 }} />
+                {autocompleteParams.InputProps.startAdornment}
+              </>
+            ),
+          }}
+        />
+      )}
+      renderOption={(props, option) => {
+        const { key, ...optionProps } = props;
+        return (
+          <Box component="li" key={key} {...optionProps}>
+            <Box>
+              <Typography variant="body2" fontWeight={600}>{option.label}</Typography>
+              <Typography variant="caption" color="text.secondary">{option.path}</Typography>
+            </Box>
+          </Box>
+        );
+      }}
+      sx={fullWidth ? { width: '100%' } : searchFieldSx}
+    />
+  );
 
   return (
     <AppBar
@@ -153,49 +228,15 @@ const Navbar = () => {
               <Search />
             </IconButton>
           ) : (
-            <TextField
-              placeholder="Search resources..."
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              sx={{
-                width: { sm: 220, md: 320 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: `${radii.lg}px`,
-                  bgcolor: isDark ? alpha('#FFFFFF', 0.04) : palette.background,
-                  color: 'text.primary',
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            renderSearchInput()
           )}
 
           <Dialog open={searchOpen} onClose={() => setSearchOpen(false)} fullWidth maxWidth="sm">
             <DialogTitle>Search console</DialogTitle>
             <DialogContent>
-              <TextField
-                autoFocus
-                fullWidth
-                placeholder="Search pages..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                sx={{ mt: 1 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              <Box sx={{ mt: 1 }}>
+                {renderSearchInput({ fullWidth: true })}
+              </Box>
             </DialogContent>
           </Dialog>
 
@@ -216,11 +257,19 @@ const Navbar = () => {
             PaperProps={{
               sx: {
                 width: 360,
+                maxHeight: '70vh',
                 mt: 1.5,
                 borderRadius: `${radii.lg}px`,
                 bgcolor: 'background.paper',
                 border: `1px solid ${muiTheme.palette.divider}`,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
               },
+            }}
+            MenuListProps={{
+              sx: { p: 0, overflow: 'hidden' },
+              disablePadding: true,
             }}
           >
             <Box
@@ -231,6 +280,7 @@ const Navbar = () => {
                 justifyContent: 'space-between',
                 bgcolor: isDark ? alpha('#FFFFFF', 0.03) : alpha('#111111', 0.03),
                 borderBottom: `1px solid ${muiTheme.palette.divider}`,
+                flexShrink: 0,
               }}
             >
               <Typography variant="subtitle2" fontWeight={700}>
@@ -242,35 +292,51 @@ const Navbar = () => {
                 </Button>
               )}
             </Box>
-            {notifications.map((item) => (
-              <MenuItem
-                key={item.id}
-                onClick={() => handleNotificationClick(item.id)}
-                sx={{
-                  py: 1.5,
-                  alignItems: 'flex-start',
-                  bgcolor: isRead(item.id) ? 'transparent' : isDark ? alpha(palette.accent, 0.08) : alpha(palette.accent, 0.06),
-                  borderBottom: `1px solid ${muiTheme.palette.divider}`,
-                }}
-              >
-                <Box sx={{ width: '100%' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                    <Typography variant="body2" fontWeight={isRead(item.id) ? 500 : 700}>
-                      {item.title}
-                    </Typography>
-                    {!isRead(item.id) && (
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: palette.accent, flexShrink: 0, mt: 0.5 }} />
-                    )}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                    {item.message}
-                  </Typography>
-                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-                    {item.time}
-                  </Typography>
+            <Box
+              sx={{
+                overflowY: 'auto',
+                maxHeight: 'calc(70vh - 64px)',
+                overscrollBehavior: 'contain',
+              }}
+              onWheel={(e) => e.stopPropagation()}
+            >
+              {notifications.length === 0 ? (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">No notifications</Typography>
                 </Box>
-              </MenuItem>
-            ))}
+              ) : (
+                notifications.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    onClick={() => handleNotificationClick(item.id)}
+                    sx={{
+                      py: 1.5,
+                      alignItems: 'flex-start',
+                      whiteSpace: 'normal',
+                      bgcolor: isRead(item.id) ? 'transparent' : isDark ? alpha(palette.accent, 0.08) : alpha(palette.accent, 0.06),
+                      borderBottom: `1px solid ${muiTheme.palette.divider}`,
+                    }}
+                  >
+                    <Box sx={{ width: '100%' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                        <Typography variant="body2" fontWeight={isRead(item.id) ? 500 : 700}>
+                          {item.title}
+                        </Typography>
+                        {!isRead(item.id) && (
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: palette.accent, flexShrink: 0, mt: 0.5 }} />
+                        )}
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                        {item.message}
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+                        {item.time}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))
+              )}
+            </Box>
           </Menu>
 
           <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 0.5 }}>

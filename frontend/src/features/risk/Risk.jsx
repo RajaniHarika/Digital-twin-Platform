@@ -42,17 +42,8 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
+import ScrollSection from '../../components/ui/ScrollSection';
 import { dashboardApi } from '../../services/api';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
 
 const MOCK_OVERALL_SCORE = 78;
 
@@ -185,15 +176,14 @@ const Risk = () => {
   const riskLabel = overallRiskScore > 70 ? 'High Risk' : overallRiskScore > 40 ? 'Medium Risk' : 'Low Risk';
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box>
+    <Box>
         {error && (
           <Alert severity="warning" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
             {error}
           </Alert>
         )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -209,13 +199,13 @@ const Risk = () => {
               </IconButton>
             </Tooltip>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Top Row: Risk Score + Categories + Pie */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {/* Overall Risk Score */}
           <Grid size={{ xs: 12, md: 3 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%', textAlign: 'center', py: 3 }}>
                 <CardContent>
                   <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
@@ -262,12 +252,12 @@ const Risk = () => {
                   />
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           {/* Risk Categories */}
           <Grid size={{ xs: 12, md: 5 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%' }}>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>Risk Categories</Typography>} />
                 <CardContent sx={{ pt: 0 }}>
@@ -312,12 +302,12 @@ const Risk = () => {
                   </Box>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           {/* Risk Distribution Pie */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%' }}>
                 <CardHeader title={<Typography variant="h6" fontWeight={600}>Severity Distribution</Typography>} />
                 <CardContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -348,12 +338,12 @@ const Risk = () => {
                   </Box>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
         </Grid>
 
         {/* Risk Trend */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card sx={{ mb: 4 }}>
             <CardHeader title={<Typography variant="h6" fontWeight={600}>Risk Score Trend (7 days)</Typography>} />
             <CardContent>
@@ -374,10 +364,10 @@ const Risk = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </motion.div>
+        </ScrollSection>
 
         {/* Risk Items List */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card>
             <CardHeader
               title={
@@ -448,9 +438,8 @@ const Risk = () => {
               </Box>
             </CardContent>
           </Card>
-        </motion.div>
-      </Box>
-    </motion.div>
+        </ScrollSection>
+    </Box>
   );
 };
 

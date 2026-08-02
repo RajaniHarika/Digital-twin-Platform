@@ -28,7 +28,6 @@ import {
   Memory,
   Speed,
   Storage,
-  AutoFixHigh,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import {
@@ -41,17 +40,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
+import ScrollSection from '../../components/ui/ScrollSection';
 import { dashboardApi } from '../../services/api';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
 
 // Mock prediction data
 const MOCK_CPU_PREDICTION = [
@@ -216,8 +206,7 @@ const Prediction = () => {
   };
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      <Box>
+    <Box>
         {usingMock && (
           <Alert severity="info" sx={{ mb: 2 }}>Showing demo forecast data — connect predictions API for live forecasts.</Alert>
         )}
@@ -227,7 +216,7 @@ const Prediction = () => {
           </Alert>
         )}
         {/* Header */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Box>
               <Typography variant="h4" fontWeight={700} gutterBottom>
@@ -238,13 +227,6 @@ const Prediction = () => {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Chip
-                icon={<AutoFixHigh />}
-                label="ML Model v2.4"
-                variant="outlined"
-                color="primary"
-                sx={{ fontWeight: 600 }}
-              />
               <Tooltip title="Refresh">
                 <IconButton onClick={fetchData} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
                   <Refresh />
@@ -252,10 +234,10 @@ const Prediction = () => {
               </Tooltip>
             </Box>
           </Box>
-        </motion.div>
+        </ScrollSection>
 
         {/* Prediction Summary Cards */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {(summaryStats.length ? summaryStats : [
               { label: 'Peak CPU (24h)', value: '88%', trend: 'up', icon: <Speed />, color: theme.palette.error.main },
@@ -281,12 +263,12 @@ const Prediction = () => {
               </Grid>
             ))}
           </Grid>
-        </motion.div>
+        </ScrollSection>
 
         {/* Prediction Charts */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, lg: 8 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card>
                 <CardHeader
                   title={<Typography variant="h6" fontWeight={600}>Resource Prediction (24h)</Typography>}
@@ -317,11 +299,11 @@ const Prediction = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
 
           <Grid size={{ xs: 12, lg: 4 }}>
-            <motion.div variants={itemVariants}>
+            <ScrollSection>
               <Card sx={{ height: '100%' }}>
                 <CardHeader
                   title={<Typography variant="h6" fontWeight={600}>Auto-Scaling Forecast</Typography>}
@@ -350,12 +332,12 @@ const Prediction = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </motion.div>
+            </ScrollSection>
           </Grid>
         </Grid>
 
         {/* Anomaly Predictions */}
-        <motion.div variants={itemVariants}>
+        <ScrollSection>
           <Card>
             <CardHeader
               title={
@@ -416,9 +398,8 @@ const Prediction = () => {
               </Grid>
             </CardContent>
           </Card>
-        </motion.div>
-      </Box>
-    </motion.div>
+        </ScrollSection>
+    </Box>
   );
 };
 
