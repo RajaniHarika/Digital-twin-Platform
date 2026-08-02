@@ -1,0 +1,12 @@
+# Copy or edit this file to configure your TwinDigital Application Server deployment
+aws_region       = "ap-south-1"
+environment      = "prod"
+project_name     = "twindigital"
+
+# EC2 compute sizing (t3.medium recommended for Docker build & runtime)
+instance_type    = "t3.medium"
+volume_size      = 20
+ubuntu_ami       = "ami-03f4878755434977f"  # Ubuntu 22.04 LTS (ap-south-1)
+
+# Security: Set this to your specific IP range in production
+ssh_allowed_cidr = "0.0.0.0/0"

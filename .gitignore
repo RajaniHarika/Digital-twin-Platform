@@ -26,3 +26,17 @@ HELP.md
 # OS
 .DS_Store
 Thumbs.db
+
+# AWS & Security Secrets (NEVER COMMIT)
+accessKeys*.csv
+*.csv
+*.pem
+*.key
+.aws/
+
+# Terraform state & secrets
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform/
+.terraform.lock.hcl
