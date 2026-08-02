@@ -42,7 +42,7 @@ import {
 import StatusChip from '../../components/StatusChip';
 import EmptyState from '../../components/EmptyState';
 import { PageSkeleton } from '../../components/LoadingSkeleton';
-import { simulationApi } from '../../services/api';
+import { dashboardApi } from '../../services/api';
 import { getRelativeTime, formatDuration } from '../../utils/formatters';
 import NewSimulationDialog from './components/NewSimulationDialog';
 import ScrollSection from '../../components/ui/ScrollSection';
@@ -79,17 +79,8 @@ const Simulation = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await simulationApi.getAll();
-      // Normalize backend response to match UI expected shape
-      const data = (res.data || []).map((s) => ({
-        id: s.id ? `sim-${s.id}` : s.id,
-        name: s.name,
-        status: (s.status || '').toLowerCase(),
-        duration: s.duration,
-        timestamp: s.createdAt || s.timestamp,
-        riskScore: s.riskScore,
-      }));
-      setSimulations(data);
+      const res = await dashboardApi.getRecentSimulations();
+      setSimulations(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Simulation fetch error:', err);
       setError('Unable to load simulations.');
@@ -127,14 +118,16 @@ const Simulation = () => {
     pending: <Timer sx={{ color: 'text.secondary' }} />,
   };
 
+  const safeSimulations = Array.isArray(simulations) ? simulations : [];
+
   const stats = {
-    total: simulations.length,
-    completed: simulations.filter((s) => s.status === 'completed').length,
-    running: simulations.filter((s) => s.status === 'running').length,
-    failed: simulations.filter((s) => s.status === 'failed').length,
+    total: safeSimulations.length,
+    completed: safeSimulations.filter((s) => s.status === 'completed').length,
+    running: safeSimulations.filter((s) => s.status === 'running').length,
+    failed: safeSimulations.filter((s) => s.status === 'failed').length,
   };
 
-  const barChartData = simulations
+  const barChartData = safeSimulations
     .filter((s) => s.riskScore !== null)
     .map((s) => ({
       name: s.name.length > 15 ? s.name.slice(0, 15) + '...' : s.name,
@@ -272,7 +265,7 @@ const Simulation = () => {
           <Card>
             <CardHeader title={<Typography variant="h6" fontWeight={600}>Simulation History</Typography>} />
             <CardContent sx={{ pt: 0 }}>
-              {simulations.length === 0 ? (
+              {safeSimulations.length === 0 ? (
                 <EmptyState
                   title="No simulations yet"
                   description="Create a new simulation to run what-if scenarios against your infrastructure."
@@ -281,7 +274,7 @@ const Simulation = () => {
                 />
               ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {simulations.map((sim) => (
+                {safeSimulations.map((sim) => (
                   <motion.div
                     key={sim.id}
                     whileHover={{ scale: 1.005 }}

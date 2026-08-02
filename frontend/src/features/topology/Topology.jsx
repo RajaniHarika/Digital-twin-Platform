@@ -77,8 +77,8 @@ const Topology = () => {
         topologyApi.getNodes(),
         topologyApi.getConnections(),
       ]);
-      setNodes(nodesRes.data);
-      setConnections(connsRes.data);
+      setNodes(Array.isArray(nodesRes.data) ? nodesRes.data : []);
+      setConnections(Array.isArray(connsRes.data) ? connsRes.data : []);
     } catch (err) {
       console.error('Topology fetch error:', err);
       setError('Unable to load topology data.');
@@ -93,7 +93,7 @@ const Topology = () => {
 
   const statusCounts = useMemo(() => {
     const counts = { healthy: 0, warning: 0, critical: 0 };
-    nodes.forEach((n) => { counts[n.status] = (counts[n.status] || 0) + 1; });
+    (Array.isArray(nodes) ? nodes : []).forEach((n) => { counts[n.status] = (counts[n.status] || 0) + 1; });
     return counts;
   }, [nodes]);
 

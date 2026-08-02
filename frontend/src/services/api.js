@@ -8,7 +8,7 @@ import { getRelativeTime } from '../utils/formatters';
 const getAuthToken = () => localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
+  baseURL: getApiBaseUrl(),
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -23,8 +23,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && !error.config?.skipAuthRedirect) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('isAuthenticated');
       authService.logout();
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
@@ -33,9 +31,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// ─── Helper ──────────────────────────────────────────────────────────
-export const mockDelay = (ms = 500) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const mapAlerts = (alerts) =>
   (alerts || []).map((a, i) => ({
@@ -193,151 +188,6 @@ export const buildCloudDashboardData = (metrics, cost, nodes) => {
   };
 };
 
-// ─── Simulation API (Real Backend) ──────────────────────────────────
-export const simulationApi = {
-  getAll: async () => {
-    try {
-      const response = await api.get('/api/v1/simulations');
-      return response;
-    } catch {
-      // Fallback to mock if backend is not running
-      await mockDelay();
-      return {
-        data: [
-          { id: 1, name: 'Payment Service Scaling', type: 'SCALE_UP', status: 'COMPLETED', duration: 45, riskScore: 23, createdAt: '2026-07-08T10:30:00Z' },
-          { id: 2, name: 'User Service Load Test', type: 'LOAD_TEST', status: 'RUNNING', duration: null, riskScore: null, createdAt: '2026-07-08T11:15:00Z' },
-          { id: 3, name: 'Order Service Migration', type: 'MIGRATION', status: 'COMPLETED', duration: 120, riskScore: 45, createdAt: '2026-07-08T09:45:00Z' },
-          { id: 4, name: 'Database Failover Test', type: 'FAILOVER', status: 'COMPLETED', duration: 30, riskScore: 12, createdAt: '2026-07-08T08:00:00Z' },
-          { id: 5, name: 'API Gateway Stress Test', type: 'LOAD_TEST', status: 'FAILED', duration: 60, riskScore: 87, createdAt: '2026-07-08T07:30:00Z' },
-        ],
-      };
-    }
-  },
-  getById: (id) => api.get(`/api/v1/simulations/${id}`),
-  create: (data) => api.post('/api/v1/simulations', data),
-  update: (id, data) => api.put(`/api/v1/simulations/${id}`, data),
-  delete: (id) => api.delete(`/api/v1/simulations/${id}`),
-};
-
-// ─── Risk API (Real Backend) ────────────────────────────────────────
-export const riskApi = {
-  getAll: async () => {
-    try {
-      const response = await api.get('/api/v1/risks');
-      return response;
-    } catch {
-      await mockDelay();
-      return {
-        data: [
-          { id: 1, riskName: 'Database Connection Pool Exhaustion', severity: 'CRITICAL', category: 'INFRASTRUCTURE', likelihood: 85, impact: 95, status: 'OPEN', description: 'Connection pool reaching maximum capacity during peak hours' },
-          { id: 2, riskName: 'API Rate Limit Breach', severity: 'HIGH', category: 'PERFORMANCE', likelihood: 72, impact: 60, status: 'MITIGATED', description: 'Third-party API rate limits being approached' },
-          { id: 3, riskName: 'SSL Certificate Expiry', severity: 'MEDIUM', category: 'SECURITY', likelihood: 100, impact: 90, status: 'OPEN', description: 'SSL certificates expiring within 30 days' },
-          { id: 4, riskName: 'Memory Leak in Order Service', severity: 'HIGH', category: 'APPLICATION', likelihood: 65, impact: 70, status: 'INVESTIGATING', description: 'Gradual memory increase detected in production' },
-          { id: 5, riskName: 'Network Latency Spike', severity: 'LOW', category: 'NETWORK', likelihood: 30, impact: 40, status: 'RESOLVED', description: 'Intermittent latency spikes between availability zones' },
-        ],
-      };
-    }
-  },
-  getById: (id) => api.get(`/api/v1/risks/${id}`),
-  create: (data) => api.post('/api/v1/risks', data),
-  update: (id, data) => api.put(`/api/v1/risks/${id}`, data),
-  delete: (id) => api.delete(`/api/v1/risks/${id}`),
-};
-
-// ─── Cost API (Real Backend) ────────────────────────────────────────
-export const costApi = {
-  getAll: async () => {
-    try {
-      const response = await api.get('/api/costs');
-      return response;
-    } catch {
-      await mockDelay();
-      return {
-        data: [
-          { id: 1, resourceName: 'EKS Cluster (prod)', resourceType: 'COMPUTE', monthlyCost: 12450.00, status: 'ACTIVE', region: 'us-east-1', tags: 'production' },
-          { id: 2, resourceName: 'RDS PostgreSQL (primary)', resourceType: 'DATABASE', monthlyCost: 8900.00, status: 'ACTIVE', region: 'us-east-1', tags: 'production' },
-          { id: 3, resourceName: 'S3 Bucket (logs)', resourceType: 'STORAGE', monthlyCost: 2340.00, status: 'ACTIVE', region: 'us-east-1', tags: 'logging' },
-          { id: 4, resourceName: 'CloudFront CDN', resourceType: 'NETWORK', monthlyCost: 4560.00, status: 'ACTIVE', region: 'global', tags: 'cdn' },
-          { id: 5, resourceName: 'Lambda Functions', resourceType: 'COMPUTE', monthlyCost: 1280.00, status: 'ACTIVE', region: 'us-east-1', tags: 'serverless' },
-        ],
-      };
-    }
-  },
-  getById: (id) => api.get(`/api/costs/${id}`),
-  create: (data) => api.post('/api/costs', data),
-  update: (id, data) => api.put(`/api/costs/${id}`, data),
-  delete: (id) => api.delete(`/api/costs/${id}`),
-  getSummary: async () => {
-    try {
-      return await api.get('/api/costs/summary');
-    } catch {
-      await mockDelay();
-      return { data: { totalMonthlyCost: 45678.00, totalResources: 23, averageCostPerResource: 1986.00, costTrend: -5.2 } };
-    }
-  },
-  getTotal: () => api.get('/api/costs/total'),
-  getByType: (type) => api.get(`/api/costs/by-type/${type}`),
-  getByRegion: (region) => api.get(`/api/costs/by-region/${region}`),
-};
-
-// ─── Topology API (Real Backend) ────────────────────────────────────
-export const topologyApi = {
-  getNodes: async () => {
-    try {
-      const response = await api.get('/api/v1/topology/nodes');
-      return response;
-    } catch {
-      await mockDelay();
-      return {
-        data: [
-          { id: 'api-gateway', type: 'gateway', label: 'API Gateway', status: 'healthy', cpu: 45.2, memory: 52.8, latency: 12, position: { x: 250, y: 50 } },
-          { id: 'user-service', type: 'service', label: 'User Service', status: 'healthy', cpu: 38.6, memory: 48.2, latency: 28, position: { x: 250, y: 150 } },
-          { id: 'order-service', type: 'service', label: 'Order Service', status: 'warning', cpu: 72.4, memory: 68.9, latency: 45, position: { x: 250, y: 250 } },
-          { id: 'payment-service', type: 'service', label: 'Payment Service', status: 'healthy', cpu: 42.1, memory: 44.3, latency: 35, position: { x: 250, y: 350 } },
-          { id: 'postgresql', type: 'database', label: 'PostgreSQL', status: 'healthy', cpu: 28.5, memory: 72.1, latency: 8, position: { x: 250, y: 450 } },
-        ],
-      };
-    }
-  },
-  getGraph: async () => {
-    try {
-      const response = await api.get('/api/v1/topology/graph');
-      return response;
-    } catch {
-      await mockDelay();
-      return {
-        data: {
-          nodes: [],
-          edges: [
-            { id: 'e1', source: 'api-gateway', target: 'user-service' },
-            { id: 'e2', source: 'user-service', target: 'order-service' },
-            { id: 'e3', source: 'order-service', target: 'payment-service' },
-            { id: 'e4', source: 'payment-service', target: 'postgresql' },
-            { id: 'e5', source: 'user-service', target: 'postgresql' },
-          ],
-        },
-      };
-    }
-  },
-  getConnections: async () => {
-    await mockDelay();
-    return {
-      data: [
-        { id: 'e1', source: 'api-gateway', target: 'user-service' },
-        { id: 'e2', source: 'user-service', target: 'order-service' },
-        { id: 'e3', source: 'order-service', target: 'payment-service' },
-        { id: 'e4', source: 'payment-service', target: 'postgresql' },
-        { id: 'e5', source: 'user-service', target: 'postgresql' },
-      ],
-    };
-  },
-  getPods: () => api.get('/api/v1/topology/pods'),
-  getDeployments: () => api.get('/api/v1/topology/deployments'),
-  getServices: () => api.get('/api/v1/topology/services'),
-  getHealth: () => api.get('/api/v1/topology/health'),
-};
-
-// ─── Dashboard API (with Fallback to Mock Data) ──────────────────────
 export const dashboardApi = {
   getMetrics: () => api.get('/metrics'),
   getRecentSimulations: () => api.get('/simulations'),
@@ -400,6 +250,11 @@ export const dashboardApi = {
       return { data: cloudMockData, source: 'mock' };
     }
   },
+};
+
+export const topologyApi = {
+  getNodes: () => api.get('/topology/nodes'),
+  getConnections: () => api.get('/topology/connections'),
 };
 
 export default api;

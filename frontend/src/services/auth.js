@@ -136,10 +136,12 @@ export const authService = {
   getCurrentUser: () => {
     if (!authService.isAuthenticated()) return null;
     const storage = getStorage();
+    const rawRole = storage.getItem('userRole');
+    const role = ENUM_TO_ROLE[rawRole] || rawRole;
     return {
       email: storage.getItem('userEmail'),
-      role: storage.getItem('userRole'),
-      name: storage.getItem('userName') || storage.getItem('userRole') || 'User',
+      role: role,
+      name: storage.getItem('userName') || role || 'User',
       loginTime: storage.getItem('loginTime'),
     };
   },
@@ -162,16 +164,27 @@ export const authService = {
       const res = await fetch(`${AUTH_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Invalid token');
-      const user = await res.json();
-      if (user?.email) {
-        const storage = getStorage();
-        persistUser(user, storage);
+      if (res.status === 401 || res.status === 403) {
+        authService.logout();
+        return false;
+      }
+      if (res.ok) {
+        const user = await res.json();
+        if (user?.email) {
+          const backendRole = user.role;
+          const displayRole = ENUM_TO_ROLE[backendRole] || backendRole;
+          const userObj = {
+            email: user.email,
+            role: displayRole,
+            name: user.name || displayRole,
+          };
+          const storage = getStorage();
+          persistUser(userObj, storage);
+        }
       }
       return true;
     } catch {
-      authService.logout();
-      return false;
+      return Boolean(token);
     }
   },
 

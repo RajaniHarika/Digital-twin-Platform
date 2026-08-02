@@ -10,8 +10,20 @@ export const ALL_ROLES = [
   'Admin',
 ];
 
-export const normalizeRole = (role) =>
-  role === 'SRE Engineer' ? 'Site Reliability Engineer (SRE)' : role;
+const ENUM_TO_ROLE = {
+  DEVOPS_ENGINEER: 'DevOps Engineer',
+  BACKEND_ENGINEER: 'Backend Engineer',
+  CLOUD_ENGINEER: 'Cloud Engineer',
+  SRE_ENGINEER: 'Site Reliability Engineer (SRE)',
+  PROJECT_MANAGER: 'Project Manager',
+  ADMIN: 'Admin',
+};
+
+export const normalizeRole = (role) => {
+  if (!role) return '';
+  const mapped = ENUM_TO_ROLE[role] || role;
+  return mapped === 'SRE Engineer' ? 'Site Reliability Engineer (SRE)' : mapped;
+};
 
 const SRE_ITEMS = [
   { path: ROUTES.DASHBOARD, label: 'Reliability Dashboard', icon: 'Dashboard' },

@@ -5,10 +5,11 @@ import SreDashboard from './SreDashboard';
 import ProjectManagerDashboard from './ProjectManagerDashboard';
 import AdminDashboard from './AdminDashboard';
 import authService from '../../services/auth';
+import { normalizeRole } from '../../utils/navigation';
 
 const DashboardRouter = () => {
   const user = authService.getCurrentUser();
-  const role = user?.role;
+  const role = normalizeRole(user?.role);
 
   if (role === 'Cloud Engineer') return <CloudDashboard />;
   if (role === 'Project Manager') return <ProjectManagerDashboard />;
