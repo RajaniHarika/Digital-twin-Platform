@@ -1,0 +1,11 @@
+variable "project_name"         { type = string }
+variable "environment"           { type = string }
+variable "master_instance_type"  { type = string }
+variable "worker_instance_type"  { type = string }
+variable "master_volume_size"    { type = number }
+variable "worker_volume_size"    { type = number }
+variable "ubuntu_ami"            { type = string }
+variable "key_pair_name"         { type = string }
+variable "subnet_id"             { type = string }
+variable "master_sg_id"          { type = string }
+variable "worker_sg_id"          { type = string }

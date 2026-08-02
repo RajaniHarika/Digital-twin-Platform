@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: 'node-exporter'
+        static_configs:
+          - targets:
+              - 'localhost:9100'
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+
+      - job_name: 'api-gateway'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['api-gateway.digitaltwin.svc.cluster.local:8080']
+
+      - job_name: 'auth-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['auth-service.digitaltwin.svc.cluster.local:8081']
+
+      - job_name: 'cluster-sync'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['cluster-sync.digitaltwin.svc.cluster.local:8082']
+
+      - job_name: 'topology-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['topology-service.digitaltwin.svc.cluster.local:8083']
+
+      - job_name: 'simulation-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['simulation-service.digitaltwin.svc.cluster.local:8084']
+
+      - job_name: 'risk-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['risk-service.digitaltwin.svc.cluster.local:8085']
+
+      - job_name: 'cost-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['cost-service.digitaltwin.svc.cluster.local:8086']
+
+      - job_name: 'ai-service'
+        metrics_path: '/metrics'
+        static_configs:
+          - targets: ['ai-service.digitaltwin.svc.cluster.local:8000']

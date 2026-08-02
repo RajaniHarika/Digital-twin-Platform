@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: topology-service
+  namespace: digitaltwin
+  labels:
+    app: topology-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: topology-service
+  template:
+    metadata:
+      labels:
+        app: topology-service
+    spec:
+      containers:
+        - name: topology-service
+          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/topology-service:latest
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: mysql-secret
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: topology-service
+  namespace: digitaltwin
+spec:
+  selector:
+    app: topology-service
+  ports:
+    - port: 8084
+      targetPort: 8084
+  type: ClusterIP

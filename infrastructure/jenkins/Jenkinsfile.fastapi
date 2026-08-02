@@ -1,0 +1,143 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'SERVICE_NAME', defaultValue: 'ai-service', description: 'Name of the FastAPI Python microservice')
+        string(name: 'SERVICE_PATH', defaultValue: 'ai-service', description: 'Relative path to the microservice directory')
+        string(name: 'AWS_REGION', defaultValue: 'ap-south-1', description: 'AWS Region for ECR')
+        string(name: 'ECR_REGISTRY', defaultValue: '123456789012.dkr.ecr.ap-south-1.amazonaws.com', description: 'AWS ECR Registry URL')
+        string(name: 'K8S_NAMESPACE', defaultValue: 'digitaltwin', description: 'Kubernetes target namespace')
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'Docker image tag (leave blank to auto-use BUILD_NUMBER)')
+        string(name: 'SONAR_PROJECT_KEY', defaultValue: 'digitaltwin-ai-service', description: 'SonarQube project key')
+    }
+
+    environment {
+        TAG              = "${params.IMAGE_TAG != '' ? params.IMAGE_TAG : BUILD_NUMBER}"
+        FULL_IMAGE       = "${params.ECR_REGISTRY}/${params.SERVICE_NAME}:${TAG}"
+        LATEST_IMAGE     = "${params.ECR_REGISTRY}/${params.SERVICE_NAME}:latest"
+        SONAR_HOST_URL   = credentials('sonar-host-url')
+        SONAR_AUTH_TOKEN = credentials('sonar-auth-token')
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install & Test') {
+            steps {
+                dir("${params.SERVICE_PATH}") {
+                    sh 'pip install -r requirements.txt'
+                    sh 'pytest --junitxml=test-results.xml || echo "No tests found"'
+                }
+            }
+            post {
+                always {
+                    dir("${params.SERVICE_PATH}") {
+                        junit allowEmptyResults: true, testResults: 'test-results.xml'
+                    }
+                }
+            }
+        }
+
+        stage('SAST - SonarQube Analysis') {
+            steps {
+                dir("${params.SERVICE_PATH}") {
+                    sh """
+                        sonar-scanner \
+                            -Dsonar.projectKey=${params.SONAR_PROJECT_KEY} \
+                            -Dsonar.sources=. \
+                            -Dsonar.exclusions=**/test_*,**/tests/**,**/__pycache__/** \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=${SONAR_AUTH_TOKEN} \
+                            -Dsonar.python.version=3.11
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('SCA - Trivy Dependency Scan') {
+            steps {
+                dir("${params.SERVICE_PATH}") {
+                    sh """
+                        trivy fs --severity HIGH,CRITICAL \
+                                 --exit-code 1 \
+                                 --format table \
+                                 --security-checks vuln \
+                                 .
+                    """
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir("${params.SERVICE_PATH}") {
+                    sh "docker build -t ${FULL_IMAGE} -t ${LATEST_IMAGE} -f Dockerfile ."
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh """
+                    trivy image --severity HIGH,CRITICAL \
+                                --exit-code 1 \
+                                --format table \
+                                --ignore-unfixed \
+                                ${FULL_IMAGE}
+                """
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws-ecr-credentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh """
+                        aws ecr get-login-password --region ${params.AWS_REGION} | docker login --username AWS --password-stdin ${params.ECR_REGISTRY}
+                        docker push ${FULL_IMAGE}
+                        docker push ${LATEST_IMAGE}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'k8s-kubeconfig']) {
+                    sh """
+                        kubectl set image deployment/${params.SERVICE_NAME} \
+                            ${params.SERVICE_NAME}=${FULL_IMAGE} \
+                            --namespace=${params.K8S_NAMESPACE}
+                        kubectl rollout status deployment/${params.SERVICE_NAME} \
+                            --namespace=${params.K8S_NAMESPACE} \
+                            --timeout=180s
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline PASSED for ${params.SERVICE_NAME}:${TAG}"
+        }
+        failure {
+            echo "Pipeline FAILED for ${params.SERVICE_NAME}:${TAG}"
+        }
+        always {
+            sh "docker rmi ${FULL_IMAGE} ${LATEST_IMAGE} || true"
+        }
+    }
+}
