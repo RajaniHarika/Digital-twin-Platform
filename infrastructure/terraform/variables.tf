@@ -83,7 +83,7 @@ variable "ecr_services" {
     "frontend",
     "api-gateway",
     "auth-service",
-    "cluster-sync",
+    "cluster-sync-service",
     "topology-service",
     "simulation-service",
     "risk-service",
