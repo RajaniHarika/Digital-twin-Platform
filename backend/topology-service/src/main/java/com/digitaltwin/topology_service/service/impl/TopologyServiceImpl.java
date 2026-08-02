@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
+    @Cacheable(value = "topology-nodes", key = "'all'")
     public List<NodeDto> getAllNodes() {
         try {
             List<NodeDto> nodes = new ArrayList<>();
@@ -69,6 +71,7 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
+    @Cacheable(value = "topology-pods", key = "'all'")
     public List<PodDto> getAllPods() {
         try {
             List<PodDto> pods = new ArrayList<>();
@@ -94,6 +97,7 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
+    @Cacheable(value = "topology-deployments", key = "'all'")
     public List<DeploymentDto> getAllDeployments() {
 
         List<DeploymentDto> deployments = new ArrayList<>();
@@ -135,6 +139,7 @@ public class TopologyServiceImpl implements TopologyService {
     }
 
     @Override
+    @Cacheable(value = "topology-services", key = "'all'")
     public List<ServiceDto> getAllServices() {
 
         List<ServiceDto> services = new ArrayList<>();

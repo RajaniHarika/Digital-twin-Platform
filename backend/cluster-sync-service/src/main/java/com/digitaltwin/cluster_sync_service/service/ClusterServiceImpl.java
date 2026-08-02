@@ -5,6 +5,8 @@ import com.digitaltwin.cluster_sync_service.dto.ClusterResponse;
 import com.digitaltwin.cluster_sync_service.entity.Cluster;
 import com.digitaltwin.cluster_sync_service.repository.ClusterRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +19,7 @@ public class ClusterServiceImpl implements ClusterService {
     private final ClusterRepository clusterRepository;
 
     @Override
+    @CacheEvict(value = "clusters", allEntries = true)
     public ClusterResponse registerCluster(ClusterRegistrationRequest request) {
 
         if (clusterRepository.existsByClusterName(request.getClusterName())) {
@@ -38,6 +41,7 @@ public class ClusterServiceImpl implements ClusterService {
     }
 
     @Override
+    @Cacheable(value = "clusters", key = "'all'")
     public List<ClusterResponse> getAllClusters() {
         return clusterRepository.findAll()
                 .stream()
@@ -46,6 +50,7 @@ public class ClusterServiceImpl implements ClusterService {
     }
 
     @Override
+    @Cacheable(value = "clusters", key = "#id")
     public ClusterResponse getClusterById(Long id) {
 
         Cluster cluster = clusterRepository.findById(id)
@@ -55,6 +60,7 @@ public class ClusterServiceImpl implements ClusterService {
     }
 
     @Override
+    @CacheEvict(value = "clusters", allEntries = true)
     public void deleteCluster(Long id) {
         clusterRepository.deleteById(id);
     }
