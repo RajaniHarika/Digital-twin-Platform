@@ -1,19 +1,12 @@
 package com.digitaltwin.topology_service.service.impl;
 
-import com.digitaltwin.topology_service.dto.DeploymentDto;
-import com.digitaltwin.topology_service.dto.NodeDto;
-import com.digitaltwin.topology_service.dto.PodDto;
-import com.digitaltwin.topology_service.dto.ServiceDto;
+import com.digitaltwin.topology_service.dto.*;
 import com.digitaltwin.topology_service.service.TopologyService;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.AppsV1Api;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1Node;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,153 +14,145 @@ import java.util.List;
 @Service
 public class TopologyServiceImpl implements TopologyService {
 
-    private final CoreV1Api coreV1Api;
-    private final AppsV1Api appsV1Api;
+    private final RestTemplate restTemplate;
 
-    public TopologyServiceImpl(ApiClient apiClient) {
-        this.coreV1Api = new CoreV1Api(apiClient);
-        this.appsV1Api = new AppsV1Api(apiClient);
+    @Value("${cluster.sync.base-url}")
+    private String clusterSyncBaseUrl;
+
+    public TopologyServiceImpl(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     @Override
     public List<NodeDto> getAllNodes() {
-        try {
-            List<NodeDto> nodes = new ArrayList<>();
-
-            List<V1Node> nodeList = coreV1Api
-                    .listNode()
-                    .execute()
-                    .getItems();
-
-            for (V1Node node : nodeList) {
-
-                String name = node.getMetadata().getName();
-
-                String status = "Unknown";
-                if (node.getStatus() != null && node.getStatus().getConditions() != null) {
-                    status = node.getStatus().getConditions().stream()
-                            .filter(condition -> "Ready".equals(condition.getType()))
-                            .findFirst()
-                            .map(condition -> condition.getStatus())
-                            .orElse("Unknown");
+        return restTemplate.exchange(
+                clusterSyncBaseUrl + "/api/kubernetes/nodes",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<NodeDto>>() {
                 }
-
-                String role = "Worker";
-                if (node.getMetadata().getLabels() != null &&
-                        node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/control-plane")) {
-                    role = "Control Plane";
-                }
-
-                nodes.add(new NodeDto(name, status, role));
-            }
-
-            return nodes;
-
-        } catch (ApiException e) {
-            throw new RuntimeException("Failed to fetch Kubernetes nodes", e);
-        }
+        ).getBody();
     }
 
     @Override
     public List<PodDto> getAllPods() {
-        try {
-            List<PodDto> pods = new ArrayList<>();
-
-            List<V1Pod> podList = coreV1Api
-                    .listPodForAllNamespaces()
-                    .execute()
-                    .getItems();
-
-            for (V1Pod pod : podList) {
-                pods.add(new PodDto(
-                        pod.getMetadata().getName(),
-                        pod.getMetadata().getNamespace(),
-                        pod.getStatus().getPhase()
-                ));
-            }
-
-            return pods;
-
-        } catch (ApiException e) {
-            throw new RuntimeException("Failed to fetch Kubernetes pods", e);
-        }
+        return restTemplate.exchange(
+                clusterSyncBaseUrl + "/api/kubernetes/pods",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<PodDto>>() {
+                }
+        ).getBody();
     }
 
     @Override
     public List<DeploymentDto> getAllDeployments() {
-
-        List<DeploymentDto> deployments = new ArrayList<>();
-
-        try {
-
-            List<V1Deployment> deploymentList = appsV1Api
-                    .listDeploymentForAllNamespaces()
-                    .execute()
-                    .getItems();
-
-            for (V1Deployment deployment : deploymentList) {
-
-                Integer replicas = 0;
-                Integer availableReplicas = 0;
-
-                if (deployment.getSpec() != null && deployment.getSpec().getReplicas() != null) {
-                    replicas = deployment.getSpec().getReplicas();
+        return restTemplate.exchange(
+                clusterSyncBaseUrl + "/api/kubernetes/deployments",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<DeploymentDto>>() {
                 }
-
-                if (deployment.getStatus() != null && deployment.getStatus().getAvailableReplicas() != null) {
-                    availableReplicas = deployment.getStatus().getAvailableReplicas();
-                }
-
-                deployments.add(new DeploymentDto(
-                        deployment.getMetadata().getName(),
-                        deployment.getMetadata().getNamespace(),
-                        replicas,
-                        availableReplicas
-                ));
-            }
-
-            return deployments;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to fetch Kubernetes deployments", e);
-        }
+        ).getBody();
     }
 
     @Override
     public List<ServiceDto> getAllServices() {
-
-        List<ServiceDto> services = new ArrayList<>();
-
-        try {
-
-            List<V1Service> serviceList = coreV1Api
-                    .listServiceForAllNamespaces()
-                    .execute()
-                    .getItems();
-
-            for (V1Service service : serviceList) {
-
-                String clusterIP = "N/A";
-
-                if (service.getSpec() != null &&
-                        service.getSpec().getClusterIP() != null) {
-                    clusterIP = service.getSpec().getClusterIP();
+        return restTemplate.exchange(
+                clusterSyncBaseUrl + "/api/kubernetes/services",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<ServiceDto>>() {
                 }
+        ).getBody();
+    }
 
-                services.add(new ServiceDto(
-                        service.getMetadata().getName(),
-                        service.getMetadata().getNamespace(),
-                        service.getSpec().getType(),
-                        clusterIP
+    @Override
+    public TopologyGraphDto getTopologyGraph() {
+
+        List<NodeDto> nodes = getAllNodes();
+        List<PodDto> pods = getAllPods();
+        List<DeploymentDto> deployments = getAllDeployments();
+        List<ServiceDto> services = getAllServices();
+
+        List<GraphNode> graphNodes = new ArrayList<>();
+        List<GraphEdge> graphEdges = new ArrayList<>();
+
+        // Nodes
+        if (nodes != null) {
+            for (NodeDto node : nodes) {
+                graphNodes.add(new GraphNode(
+                        node.getName(),
+                        node.getName(),
+                        "NODE"
                 ));
             }
-
-            return services;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to fetch Kubernetes services", e);
         }
+
+        // Pods
+        if (pods != null) {
+            for (PodDto pod : pods) {
+                graphNodes.add(new GraphNode(
+                        pod.getName(),
+                        pod.getName(),
+                        "POD"
+                ));
+
+                // Demo relationship: first node hosts every pod
+                if (nodes != null && !nodes.isEmpty()) {
+                    graphEdges.add(new GraphEdge(
+                            nodes.get(0).getName(),
+                            pod.getName(),
+                            "HOSTS"
+                    ));
+                }
+            }
+        }
+
+        // Deployments
+        if (deployments != null) {
+            for (DeploymentDto deployment : deployments) {
+                graphNodes.add(new GraphNode(
+                        deployment.getName(),
+                        deployment.getName(),
+                        "DEPLOYMENT"
+                ));
+
+                // Demo relationship: deployment manages every pod
+                if (pods != null) {
+                    for (PodDto pod : pods) {
+                        graphEdges.add(new GraphEdge(
+                                deployment.getName(),
+                                pod.getName(),
+                                "MANAGES"
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Services
+        if (services != null) {
+            for (ServiceDto service : services) {
+                graphNodes.add(new GraphNode(
+                        service.getName(),
+                        service.getName(),
+                        "SERVICE"
+                ));
+
+                // Demo relationship: service exposes every pod
+                if (pods != null) {
+                    for (PodDto pod : pods) {
+                        graphEdges.add(new GraphEdge(
+                                service.getName(),
+                                pod.getName(),
+                                "EXPOSES"
+                        ));
+                    }
+                }
+            }
+        }
+
+        return new TopologyGraphDto(graphNodes, graphEdges);
     }
 }
