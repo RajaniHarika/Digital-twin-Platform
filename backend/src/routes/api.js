@@ -6,6 +6,8 @@ import {
   PREDICTIONS,
   HISTORY,
   K8S_NODES,
+  JENKINS_PIPELINES,
+  DOCKER_IMAGES,
 } from '../data/store.js';
 
 const router = Router();
@@ -17,9 +19,13 @@ const trendData = (base, variance = 10) =>
   }));
 
 router.get('/metrics', (_req, res) => {
+  const runningPods = K8S_NODES.reduce((sum, n) => sum + (n.pods || 0), 0);
   res.json({
     activeServices: 8,
-    runningPods: 156,
+    runningPods,
+    pendingPods: 4,
+    restartCount: 12,
+    crashLoopBackOff: 1,
     cpuUsage: 72.4,
     memoryUsage: 68.9,
     networkTraffic: 847,
@@ -89,6 +95,14 @@ router.get('/predictions', (_req, res) => {
 
 router.get('/history', (_req, res) => {
   res.json(HISTORY);
+});
+
+router.get('/pipelines', (_req, res) => {
+  res.json(JENKINS_PIPELINES);
+});
+
+router.get('/docker-images', (_req, res) => {
+  res.json(DOCKER_IMAGES);
 });
 
 router.post('/simulations', (req, res) => {

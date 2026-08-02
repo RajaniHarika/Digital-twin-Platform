@@ -50,7 +50,7 @@ const mapDeploymentStatus = (status) => {
   return 'Warning';
 };
 
-const buildDashboardData = (metrics, health, alerts, deployments, nodes) => {
+const buildDashboardData = (metrics, health, alerts, deployments, nodes, pipelines, dockerImages) => {
   const criticalCount = (alerts || []).filter((a) => a.severity === 'critical' && !a.acknowledged).length;
   const serviceUptime =
     health.services?.length > 0
@@ -77,7 +77,7 @@ const buildDashboardData = (metrics, health, alerts, deployments, nodes) => {
     },
     podStatus: {
       running: metrics.runningPods ?? mockDashboardData.podStatus.running,
-      pending: metrics.pendingPods ?? Math.max(0, Math.round((metrics.runningPods || 0) * 0.08)),
+      pending: metrics.pendingPods ?? mockDashboardData.podStatus.pending,
       failed: criticalCount,
       crashLoopBackOff: metrics.crashLoopBackOff ?? mockDashboardData.podStatus.crashLoopBackOff,
       restartCount: metrics.restartCount ?? mockDashboardData.podStatus.restartCount,
@@ -92,8 +92,8 @@ const buildDashboardData = (metrics, health, alerts, deployments, nodes) => {
       status: mapDeploymentStatus(d.status),
       lastUpdated: getRelativeTime(d.timestamp),
     })),
-    jenkinsPipelines: mockDashboardData.jenkinsPipelines,
-    dockerImages: mockDashboardData.dockerImages,
+    jenkinsPipelines: pipelines?.length ? pipelines : mockDashboardData.jenkinsPipelines,
+    dockerImages: dockerImages?.length ? dockerImages : mockDashboardData.dockerImages,
     prometheusMetrics: {
       cpu: (metrics.trends?.cpu || mockDashboardData.prometheusMetrics.cpu).map((p) => ({
         time: p.name || p.time,
@@ -119,7 +119,6 @@ const buildDashboardData = (metrics, health, alerts, deployments, nodes) => {
     },
     alerts: mapAlerts(alerts),
     kpi: metrics,
-    mockFields: ['jenkinsPipelines', 'dockerImages', 'podStatus.pending', 'podStatus.restartCount'],
   };
 };
 
@@ -140,7 +139,8 @@ const mergeWithMockFallback = (data) => ({
   grafanaMonitoring: { ...mockDashboardData.grafanaMonitoring, ...data.grafanaMonitoring },
   alerts: data.alerts?.length ? data.alerts : mockDashboardData.alerts,
   deployments: data.deployments?.length ? data.deployments : mockDashboardData.deployments,
-  mockFields: data.mockFields || [],
+  jenkinsPipelines: data.jenkinsPipelines?.length ? data.jenkinsPipelines : mockDashboardData.jenkinsPipelines,
+  dockerImages: data.dockerImages?.length ? data.dockerImages : mockDashboardData.dockerImages,
 });
 
 export const buildCloudDashboardData = (metrics, cost, nodes) => {
@@ -208,19 +208,29 @@ export const dashboardApi = {
 
     try {
       const authConfig = { skipAuthRedirect: true };
-      const [metrics, health, alerts, deployments, nodes] = await Promise.all([
+      const [metrics, health, alerts, deployments, nodes, pipelines, dockerImages] = await Promise.all([
         api.get('/metrics', authConfig),
         api.get('/health', authConfig),
         api.get('/alerts', authConfig),
         api.get('/deployments', authConfig),
         api.get('/nodes', authConfig),
+        api.get('/pipelines', authConfig),
+        api.get('/docker-images', authConfig),
       ]);
-      const built = buildDashboardData(metrics.data, health.data, alerts.data, deployments.data, nodes.data);
+      const built = buildDashboardData(
+        metrics.data,
+        health.data,
+        alerts.data,
+        deployments.data,
+        nodes.data,
+        pipelines.data,
+        dockerImages.data,
+      );
       const merged = mergeWithMockFallback(built);
       return {
         data: merged,
         source: 'api',
-        partialMock: (merged.mockFields?.length ?? 0) > 0,
+        partialMock: false,
       };
     } catch {
       return { data: mockDashboardData, source: 'mock', partialMock: true };

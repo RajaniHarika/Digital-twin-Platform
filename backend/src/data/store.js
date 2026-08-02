@@ -115,3 +115,17 @@ export const HISTORY = [
   { id: 'h4', type: 'cost', action: 'Cost forecast updated', user: 'manager@digitaltwin.com', timestamp: '2026-07-29T14:20:00Z', status: 'info' },
   { id: 'h5', type: 'topology', action: 'Cluster sync completed', user: 'backend@digitaltwin.com', timestamp: '2026-07-29T11:10:00Z', status: 'success' },
 ];
+
+export const JENKINS_PIPELINES = [
+  { id: 1, name: 'auth-service-ci', stage: 'Deploy to Prod', duration: '9m 20s', lastBuild: '#1284', successRate: 97, status: 'Success' },
+  { id: 2, name: 'api-gateway-cd', stage: 'Integration Tests', duration: '6m 45s', lastBuild: '#892', successRate: 94, status: 'Running' },
+  { id: 3, name: 'topology-service-build', stage: 'Unit Tests', duration: '4m 10s', lastBuild: '#456', successRate: 91, status: 'Success' },
+  { id: 4, name: 'simulation-service-nightly', stage: 'Queued', duration: '-', lastBuild: '#203', successRate: 88, status: 'Queued' },
+];
+
+export const DOCKER_IMAGES = [
+  { id: 1, repository: 'registry.digitaltwin.com/auth-service', tag: '1.2.0', size: '198 MB', lastUpdated: '3 hours ago', securityScan: 'Passed', vulnerabilities: 0, status: 'Active' },
+  { id: 2, repository: 'registry.digitaltwin.com/api-gateway', tag: '3.0.1', size: '176 MB', lastUpdated: '1 day ago', securityScan: 'Passed', vulnerabilities: 1, status: 'Active' },
+  { id: 3, repository: 'registry.digitaltwin.com/topology-service', tag: '2.1.0', size: '214 MB', lastUpdated: '6 hours ago', securityScan: 'Warning', vulnerabilities: 8, status: 'Active' },
+  { id: 4, repository: 'registry.digitaltwin.com/simulation-service', tag: '1.0.3', size: '289 MB', lastUpdated: '2 days ago', securityScan: 'Passed', vulnerabilities: 3, status: 'Active' },
+];
