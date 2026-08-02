@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: risk-service
-          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/risk-service:latest
+          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/risk-service:latest
           ports:
             - containerPort: 8086
           envFrom:

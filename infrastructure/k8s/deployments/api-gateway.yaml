@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/api-gateway:latest
+          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/api-gateway:latest
           ports:
             - containerPort: 8080
           envFrom:

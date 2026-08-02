@@ -22,7 +22,7 @@ declare -a SERVICES=(
 
 for svc in "${SERVICES[@]}"; do
     NAME="${svc%%:*}"
-    PATH="${svc##*:}"
+    DIR_PATH="${svc##*:}"
     
     IMAGE_NAME="digitaltwin/${NAME}"
     LOCAL_TAG="${IMAGE_NAME}:latest"
@@ -30,11 +30,11 @@ for svc in "${SERVICES[@]}"; do
 
     echo "======================================================="
     echo " BUILDING AND PUSHING: $IMAGE_NAME"
-    echo " PATH: $PATH"
+    echo " PATH: $DIR_PATH"
     echo "======================================================="
 
     echo "Building Docker Image: $LOCAL_TAG..."
-    docker build -t $LOCAL_TAG $PATH
+    docker build -t $LOCAL_TAG $DIR_PATH
     
     echo "Tagging Image: $REMOTE_TAG..."
     docker tag $LOCAL_TAG $REMOTE_TAG

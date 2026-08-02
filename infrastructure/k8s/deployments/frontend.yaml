@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/frontend:latest
+          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/frontend:latest
           ports:
             - containerPort: 80
           env:

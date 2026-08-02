@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: ai-service
-          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/ai-service:latest
+          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/ai-service:latest
           ports:
             - containerPort: 8000
           env:

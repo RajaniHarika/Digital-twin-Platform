@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: topology-service
-          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/topology-service:latest
+          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/topology-service:latest
           ports:
             - containerPort: 8084
           envFrom:
