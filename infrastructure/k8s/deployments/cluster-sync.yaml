@@ -18,7 +18,7 @@ spec:
       serviceAccountName: cluster-sync-sa
       containers:
         - name: cluster-sync
-          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/cluster-sync:latest
+          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/cluster-sync-service:latest
           ports:
             - containerPort: 8083
           envFrom:
