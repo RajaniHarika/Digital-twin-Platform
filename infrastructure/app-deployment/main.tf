@@ -1,5 +1,13 @@
 terraform {
   required_version = ">= 1.5.0"
+
+  backend "s3" {
+    bucket         = "twindigital-terraform-state-75488020"
+    key            = "app-deployment/s3/terraform.tfstate"
+    region         = "eu-west-3"
+    dynamodb_table = "twindigital-terraform-locks"
+    encrypt        = true
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -165,5 +173,15 @@ resource "aws_instance" "app_server" {
     Name        = "${var.project_name}-${var.environment}-app-server"
     Role        = "application-server"
     Environment = var.environment
+  }
+}
+
+# ─── Elastic IP for Application Server ────────────────────────────────────────
+resource "aws_eip" "app_eip" {
+  instance = aws_instance.app_server.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-app-eip"
   }
 }
