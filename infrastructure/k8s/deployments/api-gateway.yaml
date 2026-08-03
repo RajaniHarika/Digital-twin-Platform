@@ -19,7 +19,7 @@ spec:
         - name: api-gateway
           image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/api-gateway:latest
           ports:
-            - containerPort: 8080
+            - containerPort: 8090
           envFrom:
             - configMapRef:
                 name: app-config
@@ -35,13 +35,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: 8090
             initialDelaySeconds: 60
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: 8090
             initialDelaySeconds: 30
             periodSeconds: 10
 ---
@@ -55,6 +55,6 @@ spec:
     app: api-gateway
   ports:
     - port: 8080
-      targetPort: 8080
+      targetPort: 8090
   type: ClusterIP
 

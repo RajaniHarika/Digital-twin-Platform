@@ -5,6 +5,7 @@ This directory provides a **dedicated, self-contained Terraform configuration** 
 ---
 
 ## 🏗️ What This Provisions
+
 - **VPC & Networking:** Dedicated VPC (`10.10.0.0/16`), Internet Gateway, and Public Subnet (`10.10.1.0/24`).
 - **Security Group (`twindigital-prod-app-sg`):**
   - **Port 80 (HTTP):** Open to the internet for browser access (`0.0.0.0/0`).
@@ -22,6 +23,7 @@ This directory provides a **dedicated, self-contained Terraform configuration** 
 ## 🚀 Quick Start Deployment
 
 ### 1. Initialize & Apply Terraform
+
 Make sure your AWS CLI credentials are configured (`aws configure`), then run:
 
 ```bash
@@ -31,6 +33,7 @@ terraform apply -auto-approve
 ```
 
 At the end of `terraform apply`, you will see outputs like:
+
 ```hcl
 app_server_public_ip = "13.234.xx.xx"
 application_url      = "http://13.234.xx.xx"
@@ -42,6 +45,7 @@ ssh_command          = "ssh -i scripts/digitaltwin-app-key.pem ubuntu@13.234.xx.
 ### 2. Connect & Deploy Your Code
 
 #### Using Docker Compose (Full Stack)
+
 1. SSH into the deployed EC2 server using the output command:
    ```bash
    ssh -i scripts/digitaltwin-app-key.pem ubuntu@<app_server_public_ip>
@@ -58,7 +62,9 @@ ssh_command          = "ssh -i scripts/digitaltwin-app-key.pem ubuntu@13.234.xx.
    ```
 
 #### Or Using Native Nginx (Frontend Only)
+
 If deploying only the React frontend to Nginx:
+
 ```bash
 cd /opt/twindigital/frontend
 npm install && npm run build
@@ -69,7 +75,9 @@ sudo systemctl restart nginx
 ---
 
 ## 🧹 Cleaning Up / Destroying Infrastructure
+
 To delete all AWS resources created by this module:
+
 ```bash
 terraform destroy -auto-approve
 ```

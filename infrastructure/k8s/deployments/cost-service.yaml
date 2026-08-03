@@ -19,7 +19,7 @@ spec:
         - name: cost-service
           image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/cost-service:latest
           ports:
-            - containerPort: 8086
+            - containerPort: 8087
           envFrom:
             - configMapRef:
                 name: app-config
@@ -35,13 +35,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8086
+              port: 8087
             initialDelaySeconds: 60
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8086
+              port: 8087
             initialDelaySeconds: 30
             periodSeconds: 10
 ---
@@ -54,7 +54,7 @@ spec:
   selector:
     app: cost-service
   ports:
-    - port: 8086
-      targetPort: 8086
+    - port: 8087
+      targetPort: 8087
   type: ClusterIP
 
