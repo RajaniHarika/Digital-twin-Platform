@@ -3,10 +3,10 @@ pipeline {
     
     environment {
         AWS_ACCOUNT_ID = "790304249797"
-        AWS_REGION = "ap-south-1"
+        AWS_REGION = "eu-west-3"
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         PROJECT_NAME = "digitaltwin"
-        K8S_MASTER_IP = "65.2.224.226"
+        K8S_MASTER_IP = "15.224.124.204"
     }
 
     stages {
