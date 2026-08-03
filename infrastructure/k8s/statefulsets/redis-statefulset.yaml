@@ -1,4 +1,19 @@
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-pv
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual-hostpath
+  hostPath:
+    path: /data/redis
+    type: DirectoryOrCreate
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: redis-service
@@ -34,6 +49,8 @@ spec:
       labels:
         app: redis
     spec:
+      imagePullSecrets:
+        - name: ecr-registry-secret
       containers:
         - name: redis
           image: redis:7.0-alpine
@@ -73,6 +90,8 @@ spec:
         name: redis-data
       spec:
         accessModes: [ "ReadWriteOnce" ]
+        storageClassName: manual-hostpath
         resources:
           requests:
             storage: 2Gi
+
