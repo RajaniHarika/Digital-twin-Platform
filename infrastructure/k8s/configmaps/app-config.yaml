@@ -6,6 +6,7 @@ metadata:
 data:
   SPRING_DATASOURCE_URL: "jdbc:mysql://virtual-infra-db.monitoring.svc.cluster.local:3306/digitaltwin?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
   SPRING_DATASOURCE_USERNAME: "dtadmin"
+  SPRING_DATASOURCE_PASSWORD: "DT@UserPass2024!"
   SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
   SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.MySQL8Dialect"
   EUREKA_ENABLED: "false"
