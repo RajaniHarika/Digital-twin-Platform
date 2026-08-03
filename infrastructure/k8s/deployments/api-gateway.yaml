@@ -28,10 +28,10 @@ spec:
           resources:
             requests:
               memory: "256Mi"
-              cpu: "200m"
+              cpu: "100m"
             limits:
               memory: "512Mi"
-              cpu: "500m"
+              cpu: "300m"
           livenessProbe:
             httpGet:
               path: /actuator/health
@@ -57,3 +57,4 @@ spec:
     - port: 8080
       targetPort: 8080
   type: ClusterIP
+
