@@ -59,7 +59,7 @@ const Navbar = () => {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const { mode, toggleTheme } = useThemeContext();
   const { toggle, setMobileOpen } = useSidebar();
-  const { notifications, unreadCount, markAsRead, markAllAsRead, isRead } = useNotifications();
+  const { notifications, unreadCount, dismissNotification, dismissAllNotifications } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -131,7 +131,7 @@ const Navbar = () => {
   };
 
   const handleNotificationClick = (id) => {
-    markAsRead(id);
+    dismissNotification(id);
     setNotificationAnchorEl(null);
   };
 
@@ -287,8 +287,8 @@ const Navbar = () => {
                 Notifications
               </Typography>
               {unreadCount > 0 && (
-                <Button size="small" onClick={markAllAsRead} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
-                  Mark all read
+                <Button size="small" onClick={dismissAllNotifications} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
+                  Clear all
                 </Button>
               )}
             </Box>
@@ -313,18 +313,16 @@ const Navbar = () => {
                       py: 1.5,
                       alignItems: 'flex-start',
                       whiteSpace: 'normal',
-                      bgcolor: isRead(item.id) ? 'transparent' : isDark ? alpha(palette.accent, 0.08) : alpha(palette.accent, 0.06),
+                      bgcolor: isDark ? alpha(palette.accent, 0.08) : alpha(palette.accent, 0.06),
                       borderBottom: `1px solid ${muiTheme.palette.divider}`,
                     }}
                   >
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                        <Typography variant="body2" fontWeight={isRead(item.id) ? 500 : 700}>
+                        <Typography variant="body2" fontWeight={700}>
                           {item.title}
                         </Typography>
-                        {!isRead(item.id) && (
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: palette.accent, flexShrink: 0, mt: 0.5 }} />
-                        )}
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: palette.accent, flexShrink: 0, mt: 0.5 }} />
                       </Box>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
                         {item.message}

@@ -55,7 +55,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const { mode, toggleTheme } = useThemeContext();
-  const { markAllAsRead, unreadCount, reloadNotifications } = useNotifications();
+  const { dismissAllNotifications, unreadCount, reloadNotifications } = useNotifications();
   const { tokens, isDark } = useAppTheme();
   const rememberMe = localStorage.getItem('rememberMe') === 'true';
 
@@ -284,11 +284,11 @@ const Settings = () => {
                   <Button
                     size="small"
                     variant="contained"
-                    onClick={markAllAsRead}
+                    onClick={dismissAllNotifications}
                     disabled={unreadCount === 0}
                     sx={{ borderRadius: `${radii.lg}px`, boxShadow: shadows.button }}
                   >
-                    Mark all read
+                    Clear all
                   </Button>
                 </Stack>
               </Stack>

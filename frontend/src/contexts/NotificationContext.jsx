@@ -5,16 +5,17 @@ import { getRelativeTime } from '../utils/formatters';
 
 const NotificationContext = createContext(null);
 
-const STORAGE_KEY = 'twindigital_read_notifications';
+const DISMISSED_KEY = 'twindigital_dismissed_notifications';
+
+const getDismissedIds = () => {
+  try {
+    return JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]');
+  } catch {
+    return [];
+  }
+};
 
 export const NotificationProvider = ({ children }) => {
-  const [readIds, setReadIds] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  });
   const [notifications, setNotifications] = useState([]);
 
   const reloadNotifications = useCallback(async () => {
@@ -23,15 +24,18 @@ export const NotificationProvider = ({ children }) => {
       return;
     }
     try {
+      const dismissed = getDismissedIds();
       const res = await dashboardApi.getAlerts();
       setNotifications(
-        mapAlerts(res.data).map((a) => ({
-          id: a.id,
-          title: a.title,
-          message: a.message || a.title,
-          time: a.timestamp || getRelativeTime(new Date().toISOString()),
-          acknowledged: a.status === 'Resolved',
-        }))
+        mapAlerts(res.data)
+          .filter((a) => !dismissed.includes(String(a.id)))
+          .map((a) => ({
+            id: a.id,
+            title: a.title,
+            message: a.message || a.title,
+            time: a.timestamp || getRelativeTime(new Date().toISOString()),
+            acknowledged: a.status === 'Resolved',
+          }))
       );
     } catch {
       setNotifications([]);
@@ -44,36 +48,34 @@ export const NotificationProvider = ({ children }) => {
     return () => window.removeEventListener('auth:changed', reloadNotifications);
   }, [reloadNotifications]);
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !readIds.includes(String(n.id))).length,
-    [notifications, readIds]
-  );
+  const unreadCount = useMemo(() => notifications.length, [notifications]);
 
-  const isRead = useCallback((id) => readIds.includes(String(id)), [readIds]);
-
-  const markAsRead = useCallback((id) => {
+  const dismissNotification = useCallback((id) => {
     const sid = String(id);
-    setReadIds((prev) => {
-      if (prev.includes(sid)) return prev;
-      const next = [...prev, sid];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    const dismissed = getDismissedIds();
+    if (!dismissed.includes(sid)) {
+      localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed, sid]));
+    }
+    setNotifications((prev) => prev.filter((n) => String(n.id) !== sid));
   }, []);
 
-  const markAllAsRead = useCallback(() => {
-    const all = notifications.map((n) => String(n.id));
-    setReadIds(all);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  const dismissAllNotifications = useCallback(() => {
+    const allIds = notifications.map((n) => String(n.id));
+    const dismissed = getDismissedIds();
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...new Set([...dismissed, ...allIds])]));
+    setNotifications([]);
   }, [notifications]);
 
   const value = {
     notifications,
     unreadCount,
-    isRead,
-    markAsRead,
-    markAllAsRead,
+    dismissNotification,
+    dismissAllNotifications,
     reloadNotifications,
+    // Legacy aliases for settings page
+    markAsRead: dismissNotification,
+    markAllAsRead: dismissAllNotifications,
+    isRead: () => false,
   };
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
