@@ -28,24 +28,24 @@ public class DataInitializer {
     @Transactional
     public void initUsers() {
         List<UserSeed> seeds = Arrays.asList(
-                new UserSeed("admin@digitaltwin.com", "password123", "Admin User", Role.ADMIN),
-                new UserSeed("devops@digitaltwin.com", "password123", "DevOps Engineer User", Role.DEVOPS_ENGINEER),
-                new UserSeed("cloud@digitaltwin.com", "password123", "Cloud Engineer User", Role.CLOUD_ENGINEER),
-                new UserSeed("backend@digitaltwin.com", "password123", "Backend Engineer User", Role.BACKEND_ENGINEER),
-                new UserSeed("pm@digitaltwin.com", "password123", "Project Manager User", Role.PROJECT_MANAGER),
-                new UserSeed("sre@digitaltwin.com", "password123", "SRE Engineer User", Role.SRE_ENGINEER)
+                new UserSeed("admin@digitaltwin.com", "admin123", "Admin User", Role.ADMIN),
+                new UserSeed("devops@digitaltwin.com", "devops123", "DevOps Engineer User", Role.DEVOPS_ENGINEER),
+                new UserSeed("cloud@digitaltwin.com", "cloud123", "Cloud Engineer User", Role.CLOUD_ENGINEER),
+                new UserSeed("backend@digitaltwin.com", "backend123", "Backend Engineer User", Role.BACKEND_ENGINEER),
+                new UserSeed("pm@digitaltwin.com", "manager123", "Project Manager User", Role.PROJECT_MANAGER),
+                new UserSeed("sre@digitaltwin.com", "sre123", "SRE Engineer User", Role.SRE_ENGINEER)
         );
 
         for (UserSeed seed : seeds) {
-            if (!userRepository.existsByEmail(seed.email)) {
-                User user = new User();
-                user.setEmail(seed.email);
-                user.setPassword(passwordEncoder.encode(seed.password));
+            User user = userRepository.findByEmail(seed.email).orElse(new User());
+            user.setEmail(seed.email);
+            user.setPassword(passwordEncoder.encode(seed.password));
+            if (user.getId() == null) {
                 user.setName(seed.name);
                 user.setRole(seed.role);
                 user.setCreatedAt(LocalDateTime.now());
-                userRepository.save(user);
             }
+            userRepository.save(user);
         }
     }
 
