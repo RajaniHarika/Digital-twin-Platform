@@ -60,7 +60,6 @@ pipeline {
             steps {
                 script {
                     def services = [
-                        'frontend': 'frontend',
                         'api-gateway': 'backend/api-gateway',
                         'auth-service': 'backend/auth-service',
                         'topology-service': 'backend/topology-service',
