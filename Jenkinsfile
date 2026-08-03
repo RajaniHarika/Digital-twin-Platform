@@ -101,8 +101,13 @@ pipeline {
                     ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$K8S_MASTER_IP '
                         cd Digital-twin-Platform && \\
                         git pull origin develop && \\
+                        kubectl apply -f infrastructure/k8s/namespaces.yaml && \\
+                        kubectl apply -f infrastructure/k8s/configmaps && \\
+                        kubectl apply -f infrastructure/k8s/secrets && \\
+                        kubectl apply -f infrastructure/k8s/rbac && \\
                         kubectl apply -f infrastructure/k8s/statefulsets && \\
                         kubectl apply -f infrastructure/k8s/deployments && \\
+                        kubectl apply -f infrastructure/k8s/ingress && \\
                         kubectl rollout restart deployment -n digitaltwin
                     '
                     '''
