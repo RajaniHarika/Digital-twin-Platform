@@ -21,6 +21,5 @@ data:
   SIMULATION_SERVICE_URL: "http://simulation-service.digitaltwin.svc.cluster.local:8085"
   RISK_SERVICE_URL: "http://risk-service.digitaltwin.svc.cluster.local:8086"
   COST_SERVICE_URL: "http://cost-service.digitaltwin.svc.cluster.local:8087"
-  AI_SERVICE_URL: "http://ai-service.digitaltwin.svc.cluster.local:8000"
   REDIS_HOST: "redis-service.digitaltwin.svc.cluster.local"
   REDIS_PORT: "6379"

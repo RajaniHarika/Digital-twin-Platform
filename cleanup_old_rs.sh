@@ -1,7 +1,7 @@
 #!/bin/bash
 # For each deployment, find the RS with the latest pod-template-hash and scale down the old one
 NAMESPACE="digitaltwin"
-DEPLOYMENTS="ai-service api-gateway auth-service cluster-sync cost-service frontend risk-service simulation-service topology-service"
+DEPLOYMENTS="api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service"
 
 for dep in $DEPLOYMENTS; do
   echo "=== $dep ==="

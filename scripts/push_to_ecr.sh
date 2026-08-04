@@ -20,7 +20,6 @@ declare -a SERVICES=(
     "simulation-service:backend/simulation-service"
     "risk-service:backend/risk-service"
     "cost-service:backend/cost-service"
-    "ai-service:ai-service"
 )
 
 for svc in "${SERVICES[@]}"; do

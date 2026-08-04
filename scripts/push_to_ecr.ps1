@@ -13,8 +13,7 @@ $Services = @(
     @{ Name = "topology-service"; Path = "backend/topology-service" },
     @{ Name = "simulation-service"; Path = "backend/simulation-service" },
     @{ Name = "risk-service"; Path = "backend/risk-service" },
-    @{ Name = "cost-service"; Path = "backend/cost-service" },
-    @{ Name = "ai-service"; Path = "ai-service" }
+    @{ Name = "cost-service"; Path = "backend/cost-service" }
 )
 
 foreach ($svc in $Services) {

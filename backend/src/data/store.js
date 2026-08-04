@@ -57,7 +57,6 @@ export const TOPOLOGY_NODES = [
   { id: 'simulation-service', type: 'service', label: 'Simulation Service', status: 'warning', cpu: 68.4, memory: 71.2, latency: 35, position: { x: 150, y: 280 } },
   { id: 'risk-service', type: 'service', label: 'Risk Service', status: 'healthy', cpu: 42.6, memory: 46.8, latency: 24, position: { x: 400, y: 280 } },
   { id: 'cost-service', type: 'service', label: 'Cost Service', status: 'healthy', cpu: 38.2, memory: 43.1, latency: 21, position: { x: 650, y: 280 } },
-  { id: 'ai-service', type: 'ai', label: 'AI Prediction Engine', status: 'healthy', cpu: 55.7, memory: 62.4, latency: 48, position: { x: 400, y: 420 } },
   { id: 'mysql', type: 'database', label: 'MySQL Cluster', status: 'healthy', cpu: 33.5, memory: 74.1, latency: 8, position: { x: 150, y: 420 } },
   { id: 'prometheus', type: 'monitoring', label: 'Prometheus', status: 'healthy', cpu: 22.1, memory: 38.4, latency: 5, position: { x: 650, y: 420 } },
 ];
@@ -69,9 +68,6 @@ export const TOPOLOGY_EDGES = [
   { id: 'e4', source: 'api-gateway', target: 'simulation-service' },
   { id: 'e5', source: 'api-gateway', target: 'risk-service' },
   { id: 'e6', source: 'api-gateway', target: 'cost-service' },
-  { id: 'e7', source: 'simulation-service', target: 'ai-service' },
-  { id: 'e8', source: 'risk-service', target: 'ai-service' },
-  { id: 'e9', source: 'cost-service', target: 'ai-service' },
   { id: 'e10', source: 'auth-service', target: 'mysql' },
   { id: 'e11', source: 'cluster-sync', target: 'prometheus' },
   { id: 'e12', source: 'topology-service', target: 'prometheus' },
@@ -89,7 +85,6 @@ export const RISK_ITEMS = [
   { id: 'r1', service: 'simulation-service', severity: 'high', score: 78, title: 'Memory pressure during scale events', recommendation: 'Increase memory limits to 512Mi' },
   { id: 'r2', service: 'api-gateway', severity: 'medium', score: 52, title: 'Single replica deployment', recommendation: 'Scale to minimum 2 replicas for HA' },
   { id: 'r3', service: 'mysql', severity: 'low', score: 24, title: 'Backup retention below policy', recommendation: 'Extend backup retention to 30 days' },
-  { id: 'r4', service: 'ai-service', severity: 'medium', score: 61, title: 'Model inference latency spikes', recommendation: 'Add HPA based on CPU threshold 70%' },
 ];
 
 export const COST_BREAKDOWN = [

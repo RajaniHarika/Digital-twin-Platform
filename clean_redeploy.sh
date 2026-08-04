@@ -4,7 +4,7 @@ set -e
 NS="digitaltwin"
 
 echo "=== Step 1: Scale all deployments to 0 ==="
-for dep in ai-service api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service; do
+for dep in api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service; do
   kubectl scale deployment $dep -n $NS --replicas=0
   echo "  Scaled down $dep"
 done
@@ -19,7 +19,7 @@ sleep 3
 
 echo ""
 echo "=== Step 3: Scale all deployments back to 1 ==="
-for dep in ai-service api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service; do
+for dep in api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service; do
   kubectl scale deployment $dep -n $NS --replicas=1
   echo "  Scaled up $dep"
 done

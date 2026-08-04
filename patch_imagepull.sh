@@ -1,7 +1,7 @@
 #!/bin/bash
 # Patch all deployments to explicitly reference imagePullSecrets
 NAMESPACE="digitaltwin"
-DEPLOYMENTS="ai-service api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service"
+DEPLOYMENTS="api-gateway auth-service cluster-sync cost-service risk-service simulation-service topology-service"
 
 for dep in $DEPLOYMENTS; do
   kubectl patch deployment $dep -n $NAMESPACE -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"ecr-registry-secret"}]}}}}'

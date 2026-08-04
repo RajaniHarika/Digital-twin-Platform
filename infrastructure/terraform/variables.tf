@@ -87,8 +87,7 @@ variable "ecr_services" {
     "topology-service",
     "simulation-service",
     "risk-service",
-    "cost-service",
-    "ai-service"
+    "cost-service"
   ]
 }
 

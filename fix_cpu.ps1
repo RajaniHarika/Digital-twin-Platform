@@ -1,4 +1,4 @@
-$services = @('auth-service','api-gateway','cluster-sync','cost-service','risk-service','simulation-service','topology-service','ai-service')
+$services = @('auth-service','api-gateway','cluster-sync','cost-service','risk-service','simulation-service','topology-service')
 foreach ($svc in $services) {
     $file = "infrastructure\k8s\deployments\$svc.yaml"
     if (Test-Path $file) {
