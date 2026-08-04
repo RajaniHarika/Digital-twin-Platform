@@ -118,9 +118,9 @@ pipeline {
 
         stage('Deploy to App Server') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'k8s-master-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'app-server-ssh-key', keyFileVariable: 'APP_SSH_KEY')]) {
                     sh '''
-                    ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$APP_SERVER_IP '
+                    ssh -i $APP_SSH_KEY -o StrictHostKeyChecking=no ubuntu@$APP_SERVER_IP '
                         cd /opt/twindigital && \\
                         sudo git pull origin develop && \\
                         sudo docker compose up -d --build
