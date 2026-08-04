@@ -4,7 +4,7 @@
  * PROMETHEUS_URL env var = http://65.2.224.226:30090
  */
 
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://13.207.71.68:30080/prometheus';
+const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://10.0.1.184:30080/prometheus';
 const TIMEOUT_MS = 5000;
 
 /**
@@ -18,12 +18,18 @@ export async function queryPrometheus(promql) {
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const resp = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      console.error(`[Prometheus] HTTP ${resp.status} for query: ${promql}`);
+      return null;
+    }
     const json = await resp.json();
     const result = json?.data?.result;
-    if (!result || result.length === 0) return null;
+    if (!result || result.length === 0) {
+      return null;
+    }
     return parseFloat(result[0].value[1]);
-  } catch {
+  } catch (err) {
+    console.error(`[Prometheus] Error querying ${promql}:`, err.message);
     return null;
   }
 }
@@ -100,15 +106,17 @@ export async function getServiceMetrics(jobName) {
  * Get cluster-wide averages for CPU and Memory from all digitaltwin services.
  */
 export async function getClusterMetrics() {
-  const [cpuAvg, memAvg, networkIn] = await Promise.all([
-    queryPrometheus(
-      'avg(process_cpu_usage{job=~"api-gateway|auth-service|cluster-sync|topology-service|simulation-service|risk-service|cost-service"}) * 100'
-    ),
-    queryPrometheus(
-      'avg(jvm_memory_used_bytes{area="heap",job=~"api-gateway|auth-service|cluster-sync|topology-service|simulation-service|risk-service|cost-service"} / jvm_memory_max_bytes{area="heap",job=~"api-gateway|auth-service|cluster-sync|topology-service|simulation-service|risk-service|cost-service"}) * 100'
-    ),
+  const [cpuMicro, cpuSystem, cpuNode, memMicro, memNode, networkIn] = await Promise.all([
+    queryPrometheus('avg(process_cpu_usage) * 100'),
+    queryPrometheus('avg(system_cpu_usage) * 100'),
+    queryPrometheus('100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'),
+    queryPrometheus('avg(jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100'),
+    queryPrometheus('(1 - (sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))) * 100'),
     queryPrometheus('sum(rate(node_network_receive_bytes_total[5m])) / 1024'),
   ]);
+
+  const cpuAvg = cpuMicro ?? cpuSystem ?? cpuNode;
+  const memAvg = memMicro ?? memNode;
 
   return {
     cpuUsage: cpuAvg != null ? Math.round(cpuAvg * 10) / 10 : null,
@@ -123,7 +131,7 @@ export async function getClusterMetrics() {
 export async function getChartTrends() {
   const [cpu, memory, network] = await Promise.all([
     queryPrometheusRange(
-      'avg(process_cpu_usage{job=~"api-gateway|auth-service|cluster-sync|topology-service|simulation-service|risk-service|cost-service"}) * 100'
+      'avg(process_cpu_usage) * 100'
     ),
     queryPrometheusRange(
       'avg(jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100'
