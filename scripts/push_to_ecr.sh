@@ -12,7 +12,6 @@ echo "Setting execute permissions on Maven wrappers..."
 find . -name "mvnw" -type f -exec chmod +x {} \;
 
 declare -a SERVICES=(
-    "frontend:frontend"
     "api-gateway:backend/api-gateway"
     "auth-service:backend/auth-service"
     "cluster-sync:backend/cluster-sync-service"
@@ -47,4 +46,4 @@ for svc in "${SERVICES[@]}"; do
     echo "✅ Successfully pushed $IMAGE_NAME"
 done
 
-echo "🎉 All 9 services have been successfully built and pushed to AWS ECR!"
+echo "🎉 All 7 services have been successfully built and pushed to AWS ECR!"

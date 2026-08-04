@@ -80,7 +80,6 @@ variable "ecr_services" {
   description = "List of service names to create ECR repositories for"
   type        = list(string)
   default = [
-    "frontend",
     "api-gateway",
     "auth-service",
     "cluster-sync-service",

@@ -6,7 +6,6 @@ Write-Host "Logging in to Amazon ECR: $RegistryUrl" -ForegroundColor Cyan
 aws ecr get-login-password --region $Region | docker login --username AWS --password-stdin $RegistryUrl
 
 $Services = @(
-    @{ Name = "frontend"; Path = "frontend" },
     @{ Name = "api-gateway"; Path = "backend/api-gateway" },
     @{ Name = "auth-service"; Path = "backend/auth-service" },
     @{ Name = "cluster-sync"; Path = "backend/cluster-sync-service" },
@@ -52,4 +51,4 @@ foreach ($svc in $Services) {
     Write-Host "✅ Successfully pushed $ImageName" -ForegroundColor Green
 }
 
-Write-Host "`n🎉 All 9 services have been successfully built and pushed to AWS ECR!" -ForegroundColor Green
+Write-Host "`n🎉 All 7 services have been successfully built and pushed to AWS ECR!" -ForegroundColor Green

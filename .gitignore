@@ -1,42 +1,52 @@
+# ─── Node.js / React (frontend) ─────────────────────────────────────────────
 node_modules/
 frontend/node_modules/
-backend/node_modules/
 frontend/dist/
-frontend/.env
+frontend/build/
+npm-debug.log*
+package-lock.json
+frontend/package-lock.json
+
+# ─── Environment Variables ───────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
+frontend/.env
+backend/.env
 
-# Maven
+# ─── Java / Maven / Spring Boot (backend microservices) ─────────────────────
 target/
-
-# IDE
-.idea/
-.vscode/
-
-# IntelliJ
-*.iml
-
-# Logs
-*.log
-
-# Spring Boot
+*.class
+*.jar
+*.war
 HELP.md
 
-# OS
+# ─── IDE ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# AWS & Security Secrets (NEVER COMMIT)
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+
+# ─── AWS Credentials (NEVER COMMIT) ─────────────────────────────────────────
 accessKeys*.csv
-*.csv
 *.pem
 *.key
 .aws/
+ecr_pass.txt
+*_pass.txt
 
-# Terraform state & secrets
+# ─── Terraform ───────────────────────────────────────────────────────────────
 *.tfstate
 *.tfstate.backup
 *.tfvars
+!*.tfvars.example
 .terraform/
 .terraform.lock.hcl
+tfplan
+*.tfplan
