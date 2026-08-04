@@ -109,40 +109,56 @@ export async function getServiceMetrics(jobName) {
  */
 export async function getClusterMetrics() {
   const [
-    cadvisorCpu,   // cAdvisor: container CPU usage rate (always available from kubelet)
-    nodeExporterCpuIdle, // Node Exporter: CPU idle % (requires node-exporter daemonset)
+    cadvisorCpu,
+    nodeExporterCpuIdle,
     memTotal,
     memAvail,
     networkIn,
+    runningPods,
+    pendingPods,
+    failedPods,
+    restartCount,
+    deploymentsCount,
   ] = await Promise.all([
     queryPrometheus('sum(rate(container_cpu_usage_seconds_total{image!="",container!="POD"}[5m])) / sum(machine_cpu_cores) * 100'),
     queryPrometheus('avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100'),
-    queryPrometheus('node_memory_MemTotal_bytes'),
-    queryPrometheus('node_memory_MemAvailable_bytes'),
+    queryPrometheus('sum(node_memory_MemTotal_bytes)'),
+    queryPrometheus('sum(node_memory_MemAvailable_bytes)'),
     queryPrometheus('sum(rate(node_network_receive_bytes_total[5m])) / 1024'),
+    queryPrometheus('sum(kube_pod_status_phase{phase="Running"})'),
+    queryPrometheus('sum(kube_pod_status_phase{phase="Pending"})'),
+    queryPrometheus('sum(kube_pod_status_phase{phase="Failed"})'),
+    queryPrometheus('sum(kube_pod_container_status_restarts_total)'),
+    queryPrometheus('count(kube_deployment_labels)'),
   ]);
 
-  // Prefer cAdvisor, fall back to Node Exporter (inverted idle)
-  const cpuUsage = cadvisorCpu != null
-    ? Math.round(cadvisorCpu * 10) / 10
-    : nodeExporterCpuIdle != null
-      ? Math.round((100 - nodeExporterCpuIdle) * 10) / 10
-      : null;
+  let cpuUsage = null;
+  if (cadvisorCpu !== null && !isNaN(cadvisorCpu)) {
+    cpuUsage = Math.round(cadvisorCpu * 10) / 10;
+  } else if (nodeExporterCpuIdle !== null && !isNaN(nodeExporterCpuIdle)) {
+    cpuUsage = Math.round((100 - nodeExporterCpuIdle) * 10) / 10;
+  }
 
-  const memoryUsage = (memTotal != null && memAvail != null && memTotal > 0)
-    ? Math.round(((memTotal - memAvail) / memTotal) * 1000) / 10
-    : null;
+  let memoryUsage = null;
+  if (memTotal !== null && memAvail !== null && memTotal > 0) {
+    const memUsed = memTotal - memAvail;
+    memoryUsage = Math.round((memUsed / memTotal) * 100 * 10) / 10;
+  }
 
-  // cAdvisor memory fallback
-  const cadvisorMemPromise = memoryUsage == null
-    ? queryPrometheus('sum(container_memory_working_set_bytes{image!="",container!="POD"}) / sum(machine_memory_bytes) * 100')
-    : Promise.resolve(null);
-  const cadvisorMem = await cadvisorMemPromise;
+  let networkTraffic = null;
+  if (networkIn !== null && !isNaN(networkIn)) {
+    networkTraffic = Math.round(networkIn);
+  }
 
-  return {
-    cpuUsage,
-    memoryUsage: memoryUsage ?? (cadvisorMem != null ? Math.round(cadvisorMem * 10) / 10 : null),
-    networkTraffic: networkIn != null ? Math.round(networkIn) : null,
+  return { 
+    cpuUsage, 
+    memoryUsage, 
+    networkTraffic,
+    runningPods,
+    pendingPods,
+    failedPods,
+    restartCount,
+    deploymentsCount
   };
 }
 
@@ -163,4 +179,9 @@ export async function getChartTrends() {
     : nodeExporterCpu.map(p => ({ ...p, value: Math.round((100 - p.value) * 10) / 10 }));
 
   return { cpu, memory, network };
+}
+
+export async function getActiveAlerts() {
+  const alerts = await queryPrometheus('sum(ALERTS{alertstate="firing"})');
+  return alerts !== null && !isNaN(alerts) ? Math.round(alerts) : null;
 }

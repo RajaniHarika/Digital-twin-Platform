@@ -18,6 +18,11 @@ data:
           - source_labels: [__address__]
             target_label: instance
 
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets:
+              - 'kube-state-metrics.monitoring.svc.cluster.local:8080'
+
       - job_name: 'kubernetes-cadvisor'
         metrics_path: '/metrics/cadvisor'
         scheme: https

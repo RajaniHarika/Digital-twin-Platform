@@ -1,15 +1,11 @@
 import { Router } from 'express';
 import {
   SIMULATIONS,
-  RISK_ITEMS,
   COST_BREAKDOWN,
-  PREDICTIONS,
-  HISTORY,
-  K8S_NODES,
-  JENKINS_PIPELINES,
-  DOCKER_IMAGES,
 } from '../data/store.js';
-import { getClusterMetrics, getChartTrends, queryPrometheus, queryPrometheusRange } from '../services/prometheus.js';
+import { getClusterMetrics, getChartTrends, queryPrometheus, getActiveAlerts } from '../services/prometheus.js';
+import { getJenkinsPipelines } from '../services/jenkins.js';
+import { getGatewayData } from '../services/gateway.js';
 
 const router = Router();
 
@@ -21,32 +17,41 @@ const trendData = (base, variance = 10) =>
 
 
 router.get('/metrics', async (_req, res) => {
-  const runningPods = K8S_NODES.reduce((sum, n) => sum + (n.pods || 0), 0);
-
   // Query real metrics from Prometheus — fall back to store values if unreachable
-  const [prom, trends] = await Promise.all([
+  const [prom, trends, pipelines, gateway, alerts] = await Promise.all([
     getClusterMetrics(),
     getChartTrends(),
+    getJenkinsPipelines(),
+    getGatewayData(),
+    getActiveAlerts()
   ]);
 
   res.json({
-    activeServices: 7,
-    runningPods,
-    pendingPods: 4,
-    restartCount: 12,
-    crashLoopBackOff: 1,
+    activeServices: prom.deploymentsCount ?? 7,
+    runningPods: prom.runningPods ?? 0,
+    pendingPods: prom.pendingPods ?? 0,
+    failedPods: prom.failedPods ?? 0,
+    restartCount: prom.restartCount ?? 0,
+    crashLoopBackOff: 0,
     // Real values from Prometheus, fallback to last known if Prometheus is down
     cpuUsage:       prom.cpuUsage      ?? 72.4,
     memoryUsage:    prom.memoryUsage   ?? 68.9,
     networkTraffic: prom.networkTraffic ?? 847,
-    activeSimulations: SIMULATIONS.filter((s) => s.status === 'running').length,
-    riskScore: 58,
-    monthlyCost: COST_BREAKDOWN.reduce((sum, c) => sum + c.monthly, 0),
+    activeSimulations: gateway.activeSimulations ?? SIMULATIONS.filter((s) => s.status === 'running').length,
+    riskScore: gateway.riskScore ?? 58,
+    monthlyCost: gateway.monthlyCost ?? COST_BREAKDOWN.reduce((sum, c) => sum + c.monthly, 0),
     trends: {
       cpu:     trends.cpu.length     ? trends.cpu     : trendData(65, 20),
       memory:  trends.memory.length  ? trends.memory  : trendData(60, 15),
       network: trends.network.length ? trends.network : trendData(600, 200),
     },
+    pipelineStatus: pipelines ?? {
+      total: 4,
+      failed: 0,
+      inProgress: 1,
+      successful: 3
+    },
+    activeAlerts: alerts ?? 0,
     // Indicate to frontend whether data is real or fallback
     dataSource: prom.cpuUsage != null ? 'prometheus' : 'fallback',
   });
