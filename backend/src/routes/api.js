@@ -12,7 +12,7 @@ import {
 import { getClusterMetrics, getChartTrends, queryPrometheus, queryPrometheusRange, getActiveAlerts } from '../services/prometheus.js';
 import { getJenkinsPipelines } from '../services/jenkins.js';
 import { getGatewayData } from '../services/gateway.js';
-import { getServiceLogs, restartCluster } from '../services/kubernetes.js';
+import { getServiceLogs, restartCluster, getDeployments, getDockerImages } from '../services/kubernetes.js';
 
 const router = Router();
 
@@ -68,16 +68,21 @@ router.get('/simulations', (_req, res) => {
   res.json(SIMULATIONS);
 });
 
-router.get('/deployments', (_req, res) => {
-  res.json([
-    { id: 'd1', service: 'auth-service', version: '1.2.0', status: 'success', timestamp: '2026-07-30T09:00:00Z', duration: 180 },
-    { id: 'd2', service: 'topology-service', version: '2.1.0', status: 'success', timestamp: '2026-07-29T16:30:00Z', duration: 240 },
-    { id: 'd3', service: 'simulation-service', version: '1.0.3', status: 'success', timestamp: '2026-07-29T14:15:00Z', duration: 95 },
-    { id: 'd4', service: 'api-gateway', version: '3.0.1', status: 'success', timestamp: '2026-07-28T11:00:00Z', duration: 150 },
-    { id: 'd5', service: 'risk-service', version: '1.0.0', status: 'success', timestamp: '2026-07-28T10:00:00Z', duration: 130 },
-    { id: 'd6', service: 'cost-service', version: '1.0.0', status: 'success', timestamp: '2026-07-28T09:00:00Z', duration: 125 },
-    { id: 'd7', service: 'cluster-sync-service', version: '1.0.0', status: 'success', timestamp: '2026-07-28T08:00:00Z', duration: 110 },
-  ]);
+router.get('/deployments', async (_req, res) => {
+  const realDeps = await getDeployments();
+  if (realDeps && realDeps.length > 0) {
+    res.json(realDeps);
+  } else {
+    res.json([
+      { id: 'd1', service: 'auth-service', version: '1.2.0', status: 'success', timestamp: '2026-07-30T09:00:00Z', duration: 180 },
+      { id: 'd2', service: 'topology-service', version: '2.1.0', status: 'success', timestamp: '2026-07-29T16:30:00Z', duration: 240 },
+      { id: 'd3', service: 'simulation-service', version: '1.0.3', status: 'success', timestamp: '2026-07-29T14:15:00Z', duration: 95 },
+      { id: 'd4', service: 'api-gateway', version: '3.0.1', status: 'success', timestamp: '2026-07-28T11:00:00Z', duration: 150 },
+      { id: 'd5', service: 'risk-service', version: '1.0.0', status: 'success', timestamp: '2026-07-28T10:00:00Z', duration: 130 },
+      { id: 'd6', service: 'cost-service', version: '1.0.0', status: 'success', timestamp: '2026-07-28T09:00:00Z', duration: 125 },
+      { id: 'd7', service: 'cluster-sync-service', version: '1.0.0', status: 'success', timestamp: '2026-07-28T08:00:00Z', duration: 110 },
+    ]);
+  }
 });
 
 router.get('/health', async (_req, res) => {
@@ -94,22 +99,25 @@ router.get('/health', async (_req, res) => {
   // Query real up{job=...} from Prometheus for each service
   const upResults = await Promise.all(
     SERVICE_JOBS.map(async ({ name, job }) => {
-      const upVal = await queryPrometheus(`up{job="${job}"}`);
-      // upVal=1: scraping OK (healthy), upVal=0: scrape failed (warning - service may not expose /actuator/prometheus)
-      // upVal=null: Prometheus itself unreachable (unknown - show as healthy to avoid false alarms)
+      // Use kube-state-metrics instead of actuator up which is failing
+      const podsRunning = await queryPrometheus(`sum(kube_pod_status_phase{namespace="digitaltwin", pod=~"^${job}-.*", phase="Running"})`);
       let status = 'healthy';
       let uptime = 99.9;
-      if (upVal === 0) {
-        status = 'warning';
-        uptime = 97.0;
+      if (podsRunning === 0) {
+        status = 'critical';
+        uptime = 95.0; // Simulated downtime for a completely dead service
+      } else if (podsRunning === null) {
+        // If query fails, fall back gracefully
+        status = 'healthy';
+        uptime = 99.5;
       }
-      return {
-        name,
-        status,
-        uptime,
-        dataSource: upVal != null ? 'prometheus' : 'fallback',
-      };
-    })
+        return {
+          name,
+          status,
+          uptime,
+          dataSource: podsRunning != null ? 'prometheus' : 'fallback',
+        };
+      })
   );
 
   const hasRealData = upResults.some((s) => s.dataSource === 'prometheus');
@@ -190,8 +198,13 @@ router.get('/pipelines', async (_req, res) => {
   }
 });
 
-router.get('/docker-images', (_req, res) => {
-  res.json(DOCKER_IMAGES);
+router.get('/docker-images', async (_req, res) => {
+  const images = await getDockerImages();
+  if (images && images.length > 0) {
+    res.json(images);
+  } else {
+    res.json(DOCKER_IMAGES);
+  }
 });
 
 router.post('/simulations', (req, res) => {
