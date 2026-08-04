@@ -103,24 +103,26 @@ export async function getServiceMetrics(jobName) {
 }
 
 /**
- * Get cluster-wide averages for CPU and Memory from all digitaltwin services.
+ * Get cluster-wide CPU and Memory from Node Exporter.
+ * Falls back to null if Prometheus is unreachable.
  */
 export async function getClusterMetrics() {
-  const [cpuMicro, cpuSystem, cpuNode, memMicro, memNode, networkIn] = await Promise.all([
-    queryPrometheus('avg(process_cpu_usage) * 100'),
-    queryPrometheus('avg(system_cpu_usage) * 100'),
-    queryPrometheus('100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'),
-    queryPrometheus('avg(jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100'),
-    queryPrometheus('(1 - (sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))) * 100'),
+  const [cpuIdle, memTotal, memAvail, networkIn] = await Promise.all([
+    // Node Exporter: CPU idle % across all cores → we invert to get usage %
+    queryPrometheus('avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100'),
+    queryPrometheus('node_memory_MemTotal_bytes'),
+    queryPrometheus('node_memory_MemAvailable_bytes'),
     queryPrometheus('sum(rate(node_network_receive_bytes_total[5m])) / 1024'),
   ]);
 
-  const cpuAvg = cpuMicro ?? cpuSystem ?? cpuNode;
-  const memAvg = memMicro ?? memNode;
+  const cpuUsage    = cpuIdle    != null ? Math.round((100 - cpuIdle) * 10) / 10 : null;
+  const memoryUsage = (memTotal != null && memAvail != null && memTotal > 0)
+    ? Math.round(((memTotal - memAvail) / memTotal) * 1000) / 10
+    : null;
 
   return {
-    cpuUsage: cpuAvg != null ? Math.round(cpuAvg * 10) / 10 : null,
-    memoryUsage: memAvg != null ? Math.round(memAvg * 10) / 10 : null,
+    cpuUsage,
+    memoryUsage,
     networkTraffic: networkIn != null ? Math.round(networkIn) : null,
   };
 }
@@ -130,14 +132,15 @@ export async function getClusterMetrics() {
  */
 export async function getChartTrends() {
   const [cpu, memory, network] = await Promise.all([
+    queryPrometheusRange('avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100'),
     queryPrometheusRange(
-      'avg(process_cpu_usage) * 100'
-    ),
-    queryPrometheusRange(
-      'avg(jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100'
+      '(1 - avg(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
     ),
     queryPrometheusRange('sum(rate(node_network_receive_bytes_total[2h])) / 1024'),
   ]);
 
-  return { cpu, memory, network };
+  // CPU is currently idle%, invert to usage%
+  const cpuUsage = cpu.map(p => ({ ...p, value: Math.round((100 - p.value) * 10) / 10 }));
+
+  return { cpu: cpuUsage, memory, network };
 }
