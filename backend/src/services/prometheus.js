@@ -103,13 +103,11 @@ export async function getServiceMetrics(jobName) {
 }
 
 /**
- * Get cluster-wide CPU and Memory using cAdvisor (kubelet) first,
- * then Node Exporter as fallback. cAdvisor metrics are always available
- * from the Kubernetes kubelet without a separate deployment.
+ * Get cluster-wide CPU and Memory using Node Exporter (node_cpu_seconds_total).
+ * cAdvisor metrics are not available in this cluster config.
  */
 export async function getClusterMetrics() {
   const [
-    cadvisorCpu,
     nodeExporterCpuIdle,
     memTotal,
     memAvail,
@@ -120,7 +118,6 @@ export async function getClusterMetrics() {
     restartCount,
     deploymentsCount,
   ] = await Promise.all([
-    queryPrometheus('sum(rate(container_cpu_usage_seconds_total{image!="",container!="POD"}[5m])) / sum(machine_cpu_cores) * 100'),
     queryPrometheus('avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100'),
     queryPrometheus('sum(node_memory_MemTotal_bytes)'),
     queryPrometheus('sum(node_memory_MemAvailable_bytes)'),
@@ -133,9 +130,7 @@ export async function getClusterMetrics() {
   ]);
 
   let cpuUsage = null;
-  if (cadvisorCpu !== null && !isNaN(cadvisorCpu)) {
-    cpuUsage = Math.round(cadvisorCpu * 10) / 10;
-  } else if (nodeExporterCpuIdle !== null && !isNaN(nodeExporterCpuIdle)) {
+  if (nodeExporterCpuIdle !== null && !isNaN(nodeExporterCpuIdle)) {
     cpuUsage = Math.round((100 - nodeExporterCpuIdle) * 10) / 10;
   }
 
@@ -166,17 +161,14 @@ export async function getClusterMetrics() {
  * Get CPU, Memory, and Network trend data for charts (last 24h).
  */
 export async function getChartTrends() {
-  const [cadvisorCpu, nodeExporterCpu, memory, network] = await Promise.all([
-    queryPrometheusRange('sum(rate(container_cpu_usage_seconds_total{image!="",container!="POD"}[5m])) / sum(machine_cpu_cores) * 100'),
+  const [nodeExporterCpu, memory, network] = await Promise.all([
     queryPrometheusRange('avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100'),
     queryPrometheusRange('(1 - avg(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'),
     queryPrometheusRange('sum(rate(node_network_receive_bytes_total[2h])) / 1024'),
   ]);
 
-  // Use cAdvisor if it has data, otherwise invert node-exporter idle%
-  const cpu = cadvisorCpu.length > 0
-    ? cadvisorCpu
-    : nodeExporterCpu.map(p => ({ ...p, value: Math.round((100 - p.value) * 10) / 10 }));
+  // Invert node-exporter idle% to get CPU usage%
+  const cpu = nodeExporterCpu.map(p => ({ ...p, value: Math.round((100 - p.value) * 10) / 10 }));
 
   return { cpu, memory, network };
 }

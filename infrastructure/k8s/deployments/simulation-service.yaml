@@ -18,6 +18,7 @@ spec:
       containers:
         - name: simulation-service
           image: shyammedh/digitaltwin-simulation-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8085
           envFrom:

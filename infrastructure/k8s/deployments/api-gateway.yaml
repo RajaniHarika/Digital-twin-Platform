@@ -18,6 +18,7 @@ spec:
       containers:
         - name: api-gateway
           image: shyammedh/digitaltwin-api-gateway:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8090
           envFrom:

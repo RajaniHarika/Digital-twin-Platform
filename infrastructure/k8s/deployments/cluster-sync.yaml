@@ -19,6 +19,7 @@ spec:
       containers:
         - name: cluster-sync
           image: shyammedh/digitaltwin-cluster-sync-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8083
           envFrom:

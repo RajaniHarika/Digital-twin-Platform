@@ -2,8 +2,14 @@ import { Router } from 'express';
 import {
   SIMULATIONS,
   COST_BREAKDOWN,
+  RISK_ITEMS,
+  PREDICTIONS,
+  HISTORY,
+  K8S_NODES,
+  JENKINS_PIPELINES,
+  DOCKER_IMAGES,
 } from '../data/store.js';
-import { getClusterMetrics, getChartTrends, queryPrometheus, getActiveAlerts } from '../services/prometheus.js';
+import { getClusterMetrics, getChartTrends, queryPrometheus, queryPrometheusRange, getActiveAlerts } from '../services/prometheus.js';
 import { getJenkinsPipelines } from '../services/jenkins.js';
 import { getGatewayData } from '../services/gateway.js';
 
@@ -17,13 +23,13 @@ const trendData = (base, variance = 10) =>
 
 
 router.get('/metrics', async (_req, res) => {
-  // Query real metrics from Prometheus — fall back to store values if unreachable
+  // Query real metrics from all live sources in parallel
   const [prom, trends, pipelines, gateway, alerts] = await Promise.all([
     getClusterMetrics(),
     getChartTrends(),
     getJenkinsPipelines(),
     getGatewayData(),
-    getActiveAlerts()
+    getActiveAlerts(),
   ]);
 
   res.json({
@@ -33,10 +39,10 @@ router.get('/metrics', async (_req, res) => {
     failedPods: prom.failedPods ?? 0,
     restartCount: prom.restartCount ?? 0,
     crashLoopBackOff: 0,
-    // Real values from Prometheus, fallback to last known if Prometheus is down
-    cpuUsage:       prom.cpuUsage      ?? 72.4,
-    memoryUsage:    prom.memoryUsage   ?? 68.9,
-    networkTraffic: prom.networkTraffic ?? 847,
+    // Real values from Prometheus, fallback to safe defaults if Prometheus is down
+    cpuUsage:       prom.cpuUsage      ?? 0,
+    memoryUsage:    prom.memoryUsage   ?? 0,
+    networkTraffic: prom.networkTraffic ?? 0,
     activeSimulations: gateway.activeSimulations ?? SIMULATIONS.filter((s) => s.status === 'running').length,
     riskScore: gateway.riskScore ?? 58,
     monthlyCost: gateway.monthlyCost ?? COST_BREAKDOWN.reduce((sum, c) => sum + c.monthly, 0),
@@ -46,10 +52,10 @@ router.get('/metrics', async (_req, res) => {
       network: trends.network.length ? trends.network : trendData(600, 200),
     },
     pipelineStatus: pipelines ?? {
-      total: 4,
+      total: JENKINS_PIPELINES.length,
       failed: 0,
       inProgress: 1,
-      successful: 3
+      successful: JENKINS_PIPELINES.filter(p => p.status === 'Success').length,
     },
     activeAlerts: alerts ?? 0,
     // Indicate to frontend whether data is real or fallback
@@ -108,7 +114,6 @@ router.get('/health', async (_req, res) => {
   });
 });
 
-
 router.get('/alerts', (_req, res) => {
   res.json([
     { id: 'a1', severity: 'warning', title: 'Simulation Service Memory', message: 'Memory usage exceeded 85% threshold', timestamp: '2026-07-30T10:45:00Z', acknowledged: false },
@@ -135,14 +140,13 @@ router.get('/predictions', async (_req, res) => {
   const { cpuUsage } = await getClusterMetrics();
   // Get last 7 days of CPU trend data to compute a simple linear slope
   const cpuTrend = await queryPrometheusRange(
-    'avg(process_cpu_usage{job=~"api-gateway|auth-service|cluster-sync|topology-service|simulation-service|risk-service|cost-service"}) * 100',
+    'avg(rate(node_cpu_seconds_total{mode!="idle"}[1h])) * 100',
     168, // 7 days in hours
     24   // 1 data point per day
   );
 
   let predictedCpu7d = null;
   if (cpuTrend.length >= 2) {
-    // Simple linear extrapolation: slope = (last - first) / days
     const slope = (cpuTrend[cpuTrend.length - 1].value - cpuTrend[0].value) / cpuTrend.length;
     predictedCpu7d = Math.round((cpuUsage ?? cpuTrend[cpuTrend.length - 1].value) + slope * 7);
   }
@@ -157,7 +161,6 @@ router.get('/predictions', async (_req, res) => {
       predicted: predictedCpu,
       dataSource: cpuUsage != null ? 'prometheus' : 'fallback',
     },
-    // Cost, Pod Count, Failure Probability remain static until AWS/K8s integration
     PREDICTIONS[1],
     PREDICTIONS[2],
     PREDICTIONS[3],
@@ -168,8 +171,14 @@ router.get('/history', (_req, res) => {
   res.json(HISTORY);
 });
 
-router.get('/pipelines', (_req, res) => {
-  res.json(JENKINS_PIPELINES);
+router.get('/pipelines', async (_req, res) => {
+  // Serve real Jenkins pipeline builds from the live Jenkins API
+  const pipelines = await getJenkinsPipelines();
+  if (pipelines) {
+    res.json(pipelines);
+  } else {
+    res.json(JENKINS_PIPELINES);
+  }
 });
 
 router.get('/docker-images', (_req, res) => {
