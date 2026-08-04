@@ -86,10 +86,24 @@ const DashboardHeader = ({ data, onRefresh }) => {
 
   const handleMenuClick = async (action) => {
     setAnchorEl(null);
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    
     switch (action) {
       case 'View Logs':
-        // Real logging! Open the raw text logs from K8s in a new tab
-        window.open(`${window.location.origin}/api/cluster/logs?service=api-gateway`, '_blank');
+        try {
+          showSnackbar('Fetching cluster logs...', 'info');
+          const response = await fetch(`${window.location.origin}/api/cluster/logs?service=api-gateway`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) throw new Error('Unauthorized');
+          
+          const logs = await response.text();
+          const blob = new Blob([logs], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        } catch (error) {
+          showSnackbar('Error fetching logs: Unauthorized', 'error');
+        }
         break;
       case 'Open Grafana':
         // Real Worker IP + Grafana NodePort
@@ -103,7 +117,10 @@ const DashboardHeader = ({ data, onRefresh }) => {
         // Execute real K8s rollout restart
         try {
           showSnackbar('Initiating cluster restart...', 'info');
-          const response = await fetch(`${window.location.origin}/api/cluster/restart`, { method: 'POST' });
+          const response = await fetch(`${window.location.origin}/api/cluster/restart`, { 
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
           if (!response.ok) throw new Error('Restart failed');
           showSnackbar('Success: Cluster rolling restart initiated!', 'success');
         } catch (error) {
@@ -118,15 +135,11 @@ const DashboardHeader = ({ data, onRefresh }) => {
             podStatus: data.podStatus,
             deployments: data.deployments,
             alerts: data.alerts,
+            metrics: data.kpi || {},
           },
           `twin-digital-report-${Date.now()}.json`
         );
         showSnackbar('Dashboard report downloaded.', 'success');
-        break;
-      case 'Export Metrics':
-        // Fix: Use the raw kpi metrics object returned by our API, not the missing prometheusMetrics field
-        downloadJson(data.kpi || {}, `prometheus-metrics-${Date.now()}.json`);
-        showSnackbar('Metrics exported successfully.', 'success');
         break;
       default:
         showSnackbar(`Action "${action}" completed.`, 'info');
@@ -140,7 +153,6 @@ const DashboardHeader = ({ data, onRefresh }) => {
     { divider: true },
     { label: 'Restart Service', icon: <RestartAlt fontSize="small" /> },
     { label: 'Download Report', icon: <Download fontSize="small" /> },
-    { label: 'Export Metrics', icon: <Settings fontSize="small" /> },
   ];
 
   const btnOutlined = {

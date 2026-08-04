@@ -7,7 +7,7 @@ services:
       NODE_ENV: production
       PORT: 5000
       JWT_SECRET: ${JWT_SECRET:-digital-twin-platform-secret-key-2026}
-      PROMETHEUS_URL: "http://13.207.71.68:30080/prometheus"
+      PROMETHEUS_URL: "http://13.207.71.68:30090"
     volumes:
       - ./infrastructure/app-deployment/scripts/digitaltwin-app-key.pem:/app/keys/master.pem:ro
     restart: unless-stopped
