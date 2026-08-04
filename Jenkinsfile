@@ -7,6 +7,7 @@ pipeline {
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         PROJECT_NAME = "digitaltwin"
         K8S_MASTER_IP = "65.2.224.226"
+        APP_SERVER_IP = "13.202.39.151"
     }
 
     stages {
@@ -112,7 +113,22 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to App Server') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'k8s-master-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''
+                    ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$APP_SERVER_IP '
+                        cd /opt/twindigital && \\
+                        sudo git pull origin develop && \\
+                        sudo docker compose up -d --build
+                    '
+                    '''
+                }
+            }
+        }
     }
+
 
     post {
         always {
