@@ -23,4 +23,4 @@ data:
   COST_SERVICE_URL: "http://cost-service.digitaltwin.svc.cluster.local:8087"
   REDIS_HOST: "redis-service.digitaltwin.svc.cluster.local"
   REDIS_PORT: "6379"
-  PROMETHEUS_URL: "http://65.2.224.226:30090"
+  PROMETHEUS_URL: "http://65.2.224.226:30080/prometheus"

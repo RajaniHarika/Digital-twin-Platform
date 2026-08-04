@@ -105,8 +105,10 @@ pipeline {
                         kubectl apply -f infrastructure/k8s/secrets && \\
                         kubectl apply -f infrastructure/k8s/rbac && \\
                         kubectl apply -f infrastructure/k8s/statefulsets && \\
+                        kubectl apply -f infrastructure/k8s/statefulsets/prometheus-statefulset.yaml -n monitoring && \\
                         kubectl apply -f infrastructure/k8s/deployments && \\
                         kubectl apply -f infrastructure/k8s/ingress && \\
+                        kubectl apply -f infrastructure/k8s/ingress/prometheus-ingress.yaml -n monitoring && \\
                         kubectl rollout restart deployment -n digitaltwin
                     '
                     '''
