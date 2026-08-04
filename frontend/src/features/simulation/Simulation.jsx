@@ -1,0 +1,360 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  CardHeader,
+  Grid,
+  Button,
+  IconButton,
+  Chip,
+  alpha,
+  useTheme,
+  Tooltip,
+  Alert,
+} from '@mui/material';
+import {
+  Science,
+  Refresh,
+  Add,
+  Timer,
+  CheckCircle,
+  Error as ErrorIcon,
+  HourglassEmpty,
+} from '@mui/icons-material';
+import { motion } from 'framer-motion';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+} from 'recharts';
+import StatusChip from '../../components/StatusChip';
+import EmptyState from '../../components/EmptyState';
+import { PageSkeleton } from '../../components/LoadingSkeleton';
+import { dashboardApi } from '../../services/api';
+import { getRelativeTime, formatDuration } from '../../utils/formatters';
+import NewSimulationDialog from './components/NewSimulationDialog';
+import ScrollSection from '../../components/ui/ScrollSection';
+
+const radarData = [
+  { subject: 'Reliability', A: 86, fullMark: 100 },
+  { subject: 'Performance', A: 72, fullMark: 100 },
+  { subject: 'Security', A: 91, fullMark: 100 },
+  { subject: 'Scalability', A: 68, fullMark: 100 },
+  { subject: 'Cost Eff.', A: 77, fullMark: 100 },
+  { subject: 'Recovery', A: 83, fullMark: 100 },
+];
+
+const Simulation = () => {
+  const theme = useTheme();
+  const [simulations, setSimulations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const [newSim, setNewSim] = useState({
+    name: '',
+    strategy: 'rolling',
+    targetService: '',
+    loadFactor: 1,
+  });
+
+  const handleDialogClose = useCallback(() => {
+    setDialogOpen(false);
+    setActiveStep(0);
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await dashboardApi.getRecentSimulations();
+      setSimulations(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Simulation fetch error:', err);
+      setError('Unable to load simulations.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRunSimulation = useCallback(async () => {
+    try {
+      await dashboardApi.createSimulation({
+        name: newSim.name,
+        type: newSim.strategy,
+        strategy: newSim.strategy,
+        targetService: newSim.targetService,
+        loadFactor: newSim.loadFactor,
+      });
+      handleDialogClose();
+      setNewSim({ name: '', strategy: 'rolling', targetService: '', loadFactor: 1 });
+      await fetchData();
+    } catch (err) {
+      console.error('Simulation create error:', err);
+      setError('Failed to start simulation.');
+    }
+  }, [newSim, fetchData, handleDialogClose]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const statusIcon = {
+    completed: <CheckCircle sx={{ color: 'success.main' }} />,
+    running: <HourglassEmpty sx={{ color: 'info.main' }} />,
+    failed: <ErrorIcon sx={{ color: 'error.main' }} />,
+    pending: <Timer sx={{ color: 'text.secondary' }} />,
+  };
+
+  const safeSimulations = Array.isArray(simulations) ? simulations : [];
+
+  const stats = {
+    total: safeSimulations.length,
+    completed: safeSimulations.filter((s) => s.status === 'completed').length,
+    running: safeSimulations.filter((s) => s.status === 'running').length,
+    failed: safeSimulations.filter((s) => s.status === 'failed').length,
+  };
+
+  const barChartData = safeSimulations
+    .filter((s) => s.riskScore !== null)
+    .map((s) => ({
+      name: s.name.length > 15 ? s.name.slice(0, 15) + '...' : s.name,
+      risk: s.riskScore,
+      fill: s.riskScore > 70 ? theme.palette.error.main : s.riskScore > 40 ? theme.palette.warning.main : theme.palette.success.main,
+    }));
+
+  if (loading) return <PageSkeleton />;
+
+  return (
+    <Box>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={fetchData}>Retry</Button>}>
+            {error}
+          </Alert>
+        )}
+        {/* Header */}
+        <ScrollSection>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box>
+              <Typography variant="h4" fontWeight={700} gutterBottom>
+                Simulation Engine
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Run what-if scenarios and deployment simulations
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setDialogOpen(true)}
+                sx={{
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  '&:hover': { background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})` },
+                }}
+              >
+                New Simulation
+              </Button>
+              <Tooltip title="Refresh">
+                <IconButton onClick={fetchData} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
+                  <Refresh />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
+        </ScrollSection>
+
+        {/* Stats */}
+        <ScrollSection>
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            {[
+              { label: 'Total Simulations', value: stats.total, color: theme.palette.primary.main, icon: <Science /> },
+              { label: 'Completed', value: stats.completed, color: theme.palette.success.main, icon: <CheckCircle /> },
+              { label: 'Running', value: stats.running, color: theme.palette.info.main, icon: <HourglassEmpty /> },
+              { label: 'Failed', value: stats.failed, color: theme.palette.error.main, icon: <ErrorIcon /> },
+            ].map((stat) => (
+              <Grid size={{ xs: 6, md: 3 }} key={stat.label}>
+                <Card sx={{ bgcolor: alpha(stat.color, 0.06), border: `1px solid ${alpha(stat.color, 0.15)}` }}>
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '16px !important' }}>
+                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(stat.color, 0.15), color: stat.color, display: 'flex' }}>
+                      {stat.icon}
+                    </Box>
+                    <Box>
+                      <Typography variant="h4" fontWeight={700} sx={{ color: stat.color }}>
+                        {stat.value}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">{stat.label}</Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </ScrollSection>
+
+        {/* Charts Row */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid size={{ xs: 12, md: 7 }}>
+            <ScrollSection>
+              <Card>
+                <CardHeader title={<Typography variant="h6" fontWeight={600}>Risk Score by Simulation</Typography>} />
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={barChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.text.secondary, 0.1)} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 12, fill: theme.palette.text.secondary }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                      <RechartsTooltip
+                        contentStyle={{
+                          backgroundColor: theme.palette.background.paper,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 8,
+                        }}
+                      />
+                      <Bar dataKey="risk" radius={[6, 6, 0, 0]} barSize={40}>
+                        {barChartData.map((entry, index) => (
+                          <Cell key={index} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </ScrollSection>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 5 }}>
+            <ScrollSection>
+              <Card sx={{ height: '100%' }}>
+                <CardHeader title={<Typography variant="h6" fontWeight={600}>System Health Radar</Typography>} />
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke={alpha(theme.palette.text.secondary, 0.15)} />
+                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: theme.palette.text.secondary }} />
+                      <Radar
+                        name="Score"
+                        dataKey="A"
+                        stroke={theme.palette.primary.main}
+                        fill={alpha(theme.palette.primary.main, 0.2)}
+                        strokeWidth={2}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </ScrollSection>
+          </Grid>
+        </Grid>
+
+        {/* Simulation List */}
+        <ScrollSection>
+          <Card>
+            <CardHeader title={<Typography variant="h6" fontWeight={600}>Simulation History</Typography>} />
+            <CardContent sx={{ pt: 0 }}>
+              {safeSimulations.length === 0 ? (
+                <EmptyState
+                  title="No simulations yet"
+                  description="Create a new simulation to run what-if scenarios against your infrastructure."
+                  actionLabel="Refresh"
+                  onAction={fetchData}
+                />
+              ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {safeSimulations.map((sim) => (
+                  <motion.div
+                    key={sim.id}
+                    whileHover={{ scale: 1.005 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <Box
+                      sx={{
+                        p: 2.5,
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.action.hover, 0.03),
+                        border: `1px solid ${theme.palette.divider}`,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.action.hover, 0.08),
+                          borderColor: theme.palette.primary.main,
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {statusIcon[sim.status]}
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={600}>{sim.name}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {sim.id} • {getRelativeTime(sim.timestamp)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {sim.duration && (
+                          <Chip
+                            icon={<Timer sx={{ fontSize: '16px !important' }} />}
+                            label={formatDuration(sim.duration)}
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                        {sim.riskScore !== null && (
+                          <Chip
+                            label={`Risk: ${sim.riskScore}%`}
+                            size="small"
+                            sx={{
+                              fontWeight: 600,
+                              bgcolor: alpha(
+                                sim.riskScore > 70 ? theme.palette.error.main
+                                  : sim.riskScore > 40 ? theme.palette.warning.main
+                                    : theme.palette.success.main,
+                                0.1,
+                              ),
+                              color: sim.riskScore > 70 ? theme.palette.error.main
+                                : sim.riskScore > 40 ? theme.palette.warning.main
+                                  : theme.palette.success.main,
+                            }}
+                          />
+                        )}
+                        <StatusChip status={sim.status} />
+                      </Box>
+                    </Box>
+                  </motion.div>
+                ))}
+              </Box>
+              )}
+            </CardContent>
+          </Card>
+        </ScrollSection>
+
+        {/* New Simulation Dialog */}
+        <NewSimulationDialog
+          open={dialogOpen}
+          onClose={handleDialogClose}
+          onSubmit={handleRunSimulation}
+          activeStep={activeStep}
+          setActiveStep={setActiveStep}
+          newSim={newSim}
+          setNewSim={setNewSim}
+        />
+    </Box>
+  );
+};
+
+export default Simulation;
