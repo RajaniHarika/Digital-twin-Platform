@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_ACCOUNT_ID = "790304249797"
         AWS_REGION = "ap-south-1"
-        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        DOCKERHUB_USERNAME = "shyammedh"
         PROJECT_NAME = "digitaltwin"
         K8S_MASTER_IP = "65.2.224.226"
         APP_SERVER_IP = "13.202.39.151"
@@ -47,11 +47,11 @@ pipeline {
             }
         }
 
-        stage('AWS ECR Login') {
+        stage('Docker Hub Login') {
             steps {
-                withCredentials([aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
-                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    echo \$DOCKER_PASS | docker login --username \$DOCKER_USER --password-stdin
                     """
                 }
             }
@@ -75,18 +75,18 @@ pipeline {
                         echo "Building ${name}..."
                         sh """
                         cd ${path}
-                        docker build -t ${ECR_REGISTRY}/${PROJECT_NAME}/${name}:latest .
+                        docker build -t ${DOCKERHUB_USERNAME}/${PROJECT_NAME}-${name}:latest .
                         """
                         
                         echo "SCA & Container Scan for ${name} (Trivy)..."
                         // Scans the OS and application libraries (NPM/Maven/Pip) for CVEs
                         sh """
-                        trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress ${ECR_REGISTRY}/${PROJECT_NAME}/${name}:latest
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress ${DOCKERHUB_USERNAME}/${PROJECT_NAME}-${name}:latest
                         """
                         
-                        echo "Pushing ${name} to ECR..."
+                        echo "Pushing ${name} to Docker Hub..."
                         sh """
-                        docker push ${ECR_REGISTRY}/${PROJECT_NAME}/${name}:latest
+                        docker push ${DOCKERHUB_USERNAME}/${PROJECT_NAME}-${name}:latest
                         """
                     }
                 }

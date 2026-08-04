@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: simulation-service
-          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/simulation-service:latest
+          image: shyammedh/digitaltwin-simulation-service:latest
           ports:
             - containerPort: 8085
           envFrom:

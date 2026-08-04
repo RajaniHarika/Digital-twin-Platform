@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: 790304249797.dkr.ecr.ap-south-1.amazonaws.com/digitaltwin/auth-service:latest
+          image: shyammedh/digitaltwin-auth-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8081
