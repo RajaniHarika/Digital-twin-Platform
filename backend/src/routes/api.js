@@ -12,6 +12,7 @@ import {
 import { getClusterMetrics, getChartTrends, queryPrometheus, queryPrometheusRange, getActiveAlerts } from '../services/prometheus.js';
 import { getJenkinsPipelines } from '../services/jenkins.js';
 import { getGatewayData } from '../services/gateway.js';
+import { getServiceLogs, restartCluster } from '../services/kubernetes.js';
 
 const router = Router();
 
@@ -94,11 +95,18 @@ router.get('/health', async (_req, res) => {
   const upResults = await Promise.all(
     SERVICE_JOBS.map(async ({ name, job }) => {
       const upVal = await queryPrometheus(`up{job="${job}"}`);
+      // upVal=1: scraping OK (healthy), upVal=0: scrape failed (warning - service may not expose /actuator/prometheus)
+      // upVal=null: Prometheus itself unreachable (unknown - show as healthy to avoid false alarms)
+      let status = 'healthy';
+      let uptime = 99.9;
+      if (upVal === 0) {
+        status = 'warning';
+        uptime = 97.0;
+      }
       return {
         name,
-        // 1 = healthy, 0 = down, null = prometheus unreachable (use healthy as safe default)
-        status: upVal === 0 ? 'down' : 'healthy',
-        uptime: upVal === 0 ? 95.0 : 99.9,
+        status,
+        uptime,
         dataSource: upVal != null ? 'prometheus' : 'fallback',
       };
     })
@@ -106,9 +114,10 @@ router.get('/health', async (_req, res) => {
 
   const hasRealData = upResults.some((s) => s.dataSource === 'prometheus');
   const allHealthy = upResults.every((s) => s.status === 'healthy');
+  const anyDown = upResults.some((s) => s.status === 'down');
 
   res.json({
-    overall: allHealthy ? 'healthy' : 'degraded',
+    overall: anyDown ? 'degraded' : allHealthy ? 'healthy' : 'warning',
     services: upResults,
     dataSource: hasRealData ? 'prometheus' : 'fallback',
   });
@@ -174,8 +183,8 @@ router.get('/history', (_req, res) => {
 router.get('/pipelines', async (_req, res) => {
   // Serve real Jenkins pipeline builds from the live Jenkins API
   const pipelines = await getJenkinsPipelines();
-  if (pipelines) {
-    res.json(pipelines);
+  if (pipelines && pipelines.cards) {
+    res.json(pipelines.cards);
   } else {
     res.json(JENKINS_PIPELINES);
   }
@@ -203,6 +212,26 @@ router.post('/simulations', (req, res) => {
   };
   SIMULATIONS.unshift(simulation);
   res.status(201).json(simulation);
+});
+
+router.get('/cluster/logs', async (req, res) => {
+  try {
+    const service = req.query.service || 'api-gateway';
+    const logs = await getServiceLogs(service);
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(logs);
+  } catch (error) {
+    res.status(500).send(`Error fetching logs: ${error.message}`);
+  }
+});
+
+router.post('/cluster/restart', async (req, res) => {
+  try {
+    const output = await restartCluster();
+    res.json({ message: 'Cluster rolling restart initiated', output });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;

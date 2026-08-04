@@ -88,18 +88,27 @@ const DashboardHeader = ({ data, onRefresh }) => {
     setAnchorEl(null);
     switch (action) {
       case 'View Logs':
-        navigate('/history');
+        // Real logging! Open the raw text logs from K8s in a new tab
+        window.open(`${window.location.origin}/api/cluster/logs?service=api-gateway`, '_blank');
         break;
       case 'Open Grafana':
-        navigate('/prediction');
-        showSnackbar('Opening Grafana-style analytics view.', 'info');
+        // Real Worker IP + Grafana NodePort
+        window.open('http://13.207.71.68:30300', '_blank');
         break;
       case 'Open Prometheus':
-        await refreshDashboard(true);
-        showSnackbar('Prometheus metrics refreshed on dashboard.', 'info');
+        // Real Worker IP + Prometheus NodePort
+        window.open('http://13.207.71.68:30090', '_blank');
         break;
       case 'Restart Service':
-        showSnackbar('Rolling restart queued for unhealthy workloads.', 'warning');
+        // Execute real K8s rollout restart
+        try {
+          showSnackbar('Initiating cluster restart...', 'info');
+          const response = await fetch(`${window.location.origin}/api/cluster/restart`, { method: 'POST' });
+          if (!response.ok) throw new Error('Restart failed');
+          showSnackbar('Success: Cluster rolling restart initiated!', 'success');
+        } catch (error) {
+          showSnackbar('Error triggering restart: Check permissions', 'error');
+        }
         break;
       case 'Download Report':
         downloadJson(
@@ -115,7 +124,8 @@ const DashboardHeader = ({ data, onRefresh }) => {
         showSnackbar('Dashboard report downloaded.', 'success');
         break;
       case 'Export Metrics':
-        downloadJson(data.prometheusMetrics || {}, `prometheus-metrics-${Date.now()}.json`);
+        // Fix: Use the raw kpi metrics object returned by our API, not the missing prometheusMetrics field
+        downloadJson(data.kpi || {}, `prometheus-metrics-${Date.now()}.json`);
         showSnackbar('Metrics exported successfully.', 'success');
         break;
       default:
