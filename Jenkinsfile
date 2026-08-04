@@ -101,8 +101,6 @@ pipeline {
                         cd Digital-twin-Platform && \\
                         git pull origin develop && \\
                         kubectl apply -f infrastructure/k8s/namespaces.yaml && \\
-                        WORKER_IP=\$(kubectl get nodes -o wide | grep -v control-plane | grep -v NAME | awk '{print \$6}' | head -n 1) && \\
-                        if [ ! -z "\$WORKER_IP" ]; then sed -i "s|PROMETHEUS_URL:.*|PROMETHEUS_URL: \\\"http://\${WORKER_IP}:30080/prometheus\\\"|g" infrastructure/k8s/configmaps/app-config.yaml; fi && \\
                         kubectl apply -f infrastructure/k8s/configmaps && \\
                         kubectl apply -f infrastructure/k8s/secrets && \\
                         kubectl apply -f infrastructure/k8s/rbac && \\

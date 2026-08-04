@@ -4,7 +4,7 @@
  * PROMETHEUS_URL env var = http://65.2.224.226:30090
  */
 
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://10.0.1.184:30080/prometheus';
+const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://13.207.71.68:30080/prometheus';
 const TIMEOUT_MS = 5000;
 
 /**
