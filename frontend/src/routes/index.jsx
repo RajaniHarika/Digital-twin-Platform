@@ -14,7 +14,7 @@ const Settings = lazy(() => import('../pages/Settings'));
 const Help = lazy(() => import('../pages/Help'));
 
 const routes = [
-  { path: '/', element: <Landing />, title: 'Home', isPublic: true, hideLayout: true },
+  { path: '/', element: <Landing />, title: 'Home', noAuth: true, hideLayout: true },
   { path: '/login', element: <Login />, title: 'Login', isPublic: true, hideLayout: true },
   { path: '/dashboard', element: <DashboardRouter />, title: 'Dashboard' },
   { path: '/topology', element: <Topology />, title: 'Infrastructure' },

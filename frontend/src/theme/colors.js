@@ -1,8 +1,8 @@
 export const palette = {
-  accent: '#C7FF3A',
-  accentHover: '#B8F728',
-  accentLight: '#ECFFB6',
-  accentDark: '#94C600',
+  accent: '#3B82F6',
+  accentHover: '#2563EB',
+  accentLight: '#DBEAFE',
+  accentDark: '#081021',
   background: '#FCFBF8',
   backgroundAlt: '#FBFAF7',
   section: '#FFFFFF',
@@ -23,7 +23,7 @@ export const colors = {
     main: palette.accent,
     light: palette.accentLight,
     dark: palette.accentDark,
-    contrastText: '#111111',
+    contrastText: '#FFFFFF',
   },
   secondary: {
     main: palette.textPrimary,
@@ -85,10 +85,10 @@ export const darkColors = {
 
 export const gradients = {
   hero: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)',
-  cta: 'linear-gradient(90deg, #C7FF3A, #ECFFB6)',
+  cta: 'linear-gradient(90deg, #3B82F6, #10B981)',
   subtle: 'linear-gradient(180deg, #FCFBF8 0%, #FFFFFF 100%)',
-  cardHover: 'linear-gradient(135deg, rgba(199,255,58,0.02) 0%, rgba(236,255,182,0.04) 100%)',
-  heroGlow: 'radial-gradient(circle, rgba(199,255,58,0.08), transparent 70%)',
+  cardHover: 'linear-gradient(135deg, rgba(59,130,246,0.04) 0%, rgba(16,185,129,0.04) 100%)',
+  heroGlow: 'radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%)',
 };
 
 export const shadows = {
@@ -98,7 +98,7 @@ export const shadows = {
   xl: '0 20px 50px rgba(0, 0, 0, 0.06)',
   card: '0 10px 35px rgba(0, 0, 0, 0.05)',
   cardHover: '0 20px 50px rgba(0, 0, 0, 0.06)',
-  button: '0 10px 28px rgba(199, 255, 58, 0.18)',
+  button: '0 10px 28px rgba(59, 130, 246, 0.25)',
   badge: '0 2px 8px rgba(0, 0, 0, 0.04)',
 };
 
@@ -141,13 +141,13 @@ export const badgeStyle = {
 
 export const iconCircleStyle = {
   bgcolor: palette.accent,
-  color: '#111111',
+  color: '#FFFFFF',
   borderRadius: '50%',
 };
 
 export const chartColors = {
-  primary: '#C7FF3A',
-  secondary: '#94C600',
+  primary: '#3B82F6',
+  secondary: '#10B981',
   tertiary: '#111111',
   quaternary: '#565656',
   success: '#22C55E',

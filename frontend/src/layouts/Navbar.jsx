@@ -211,10 +211,21 @@ const Navbar = () => {
         </IconButton>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.04em' }}>
+          <Typography 
+            variant="caption" 
+            onClick={() => navigate('/')}
+            sx={{ 
+              color: 'text.secondary', 
+              fontWeight: 600, 
+              letterSpacing: '0.04em',
+              cursor: 'pointer',
+              transition: 'color 0.2s',
+              '&:hover': { color: 'primary.main' }
+            }}
+          >
             TWIN DIGITAL
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>/</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mx: 0.5 }}>{'>'}</Typography>
           <Typography variant="subtitle1" fontWeight={700} color="text.primary">
             {currentBreadcrumb.label}
           </Typography>

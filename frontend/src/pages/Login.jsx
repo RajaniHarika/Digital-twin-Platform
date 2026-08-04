@@ -105,9 +105,10 @@ const Login = () => {
                       bgcolor: palette.accent,
                       display: 'grid',
                       placeItems: 'center',
+                      overflow: 'hidden',
                     }}
                   >
-                    <Hub sx={{ color: '#111111' }} />
+                    <img src="/logo.jpeg" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </Box>
                   <Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>

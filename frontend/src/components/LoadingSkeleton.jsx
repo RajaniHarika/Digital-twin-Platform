@@ -3,10 +3,11 @@ import { shadows, radii, palette } from '../theme/colors';
 
 const cardSx = {
   borderRadius: `${radii.xl}px`,
-  border: '1px solid rgba(17, 17, 17, 0.06)',
+  border: '1px solid',
+  borderColor: 'divider',
   boxShadow: shadows.card,
   p: 3,
-  bgcolor: palette.card,
+  bgcolor: 'background.paper',
 };
 
 export const MetricCardSkeleton = () => (
@@ -18,7 +19,7 @@ export const MetricCardSkeleton = () => (
 );
 
 export const PageSkeleton = () => (
-  <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: palette.background, minHeight: '100vh' }}>
+  <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: 'background.default', minHeight: '100vh' }}>
     <Skeleton variant="rounded" width={280} height={36} sx={{ mb: 1, borderRadius: 2 }} animation="wave" />
     <Skeleton variant="text" width="50%" height={22} animation="wave" sx={{ mb: 4 }} />
     <Box sx={{ display: 'grid', gap: 3, mb: 4, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' } }}>

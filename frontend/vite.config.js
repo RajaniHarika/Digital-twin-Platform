@@ -9,13 +9,13 @@ export default defineConfig({
     proxy: {
       // Forward auth requests to API Gateway
       '/auth': {
-        target: 'http://localhost:8090',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
       // Forward all /api/** requests to API Gateway
       '/api': {
-        target: 'http://localhost:8090',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },

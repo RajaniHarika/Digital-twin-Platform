@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Grid, Typography, Tabs, Tab, Button, Divider } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import RoleDashboardLayout from './shared/RoleDashboardLayout';
 import MetricGrid from './shared/MetricGrid';
 import DashboardCard from '../dashboard/components/DashboardCard';
@@ -14,9 +14,17 @@ import BackendDashboard from './BackendDashboard';
 import SreDashboard from './SreDashboard';
 import ProjectManagerDashboard from './ProjectManagerDashboard';
 
+const ROLE_TO_TAB = {
+  'DevOps Engineer': 'devops',
+  'Cloud Engineer': 'cloud',
+  'Backend Engineer': 'backend',
+  'SRE': 'sre',
+  'Project Manager': 'pm',
+};
+
 const AdminOverview = ({ data }) => {
   const { tokens } = useAppTheme();
-  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
   const { platform, sections } = data;
 
   return (
@@ -40,7 +48,7 @@ const AdminOverview = ({ data }) => {
                   </Typography>
                 ))}
               </Box>
-              <Button size="small" variant="outlined" onClick={() => navigate('/dashboard')} sx={{ textTransform: 'none' }}>
+              <Button size="small" variant="outlined" onClick={() => setSearchParams({ tab: ROLE_TO_TAB[section.role] || 'overview' })} sx={{ textTransform: 'none' }}>
                 View as role
               </Button>
             </DashboardCard>
@@ -61,7 +69,14 @@ const TAB_PANELS = [
 ];
 
 const AdminDashboard = () => {
-  const [tab, setTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabKey = searchParams.get('tab') || 'overview';
+  const tabIndex = TAB_PANELS.findIndex(t => t.key === tabKey);
+  const tab = tabIndex >= 0 ? tabIndex : 0;
+  
+  const handleTabChange = (_, newValue) => {
+    setSearchParams({ tab: TAB_PANELS[newValue].key });
+  };
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [usingMock, setUsingMock] = useState(false);
@@ -106,7 +121,7 @@ const AdminDashboard = () => {
     return (
       <Box>
         <Box sx={{ px: { xs: 1.5, md: 2 }, pt: 2, maxWidth: 1440, mx: 'auto' }}>
-          <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 1 }}>
+          <Tabs value={tab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 1 }}>
             {TAB_PANELS.map((t, i) => (
               <Tab key={t.key} label={t.label} value={i} />
             ))}
@@ -124,7 +139,7 @@ const AdminDashboard = () => {
       onRefresh={fetchData}
       usingMock={usingMock}
     >
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
+      <Tabs value={tab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
         {TAB_PANELS.map((t, i) => (
           <Tab key={t.key} label={t.label} value={i} />
         ))}

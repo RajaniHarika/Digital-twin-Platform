@@ -57,6 +57,7 @@ export const authService = {
    */
   login: async (email, password, role, rememberMe) => {
     const backendRoleEnum = ROLE_TO_ENUM[role] || role;
+
     const response = await fetch(`${AUTH_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,6 +74,7 @@ export const authService = {
     }
 
     const data = await response.json();
+
     const token = data.token;
     const backendRole = data.role || (data.user && data.user.role) || role;
     const displayRole = ENUM_TO_ROLE[backendRole] || backendRole;
