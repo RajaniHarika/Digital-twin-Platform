@@ -20,6 +20,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5000
 
+RUN apk add --no-cache openssh-client
+
 COPY backend/package.json backend/package-lock.json ./backend/
 RUN npm ci --prefix backend --omit=dev
 

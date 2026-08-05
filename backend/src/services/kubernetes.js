@@ -1,17 +1,35 @@
 import { exec } from 'child_process';
 import util from 'util';
+import fs from 'fs';
 const execPromise = util.promisify(exec);
 
 // Path to the SSH key mounted inside the Docker container
 const SSH_KEY_PATH = '/app/keys/master.pem';
+const SAFE_KEY_PATH = '/tmp/master.pem';
 const MASTER_NODE_USER = 'ubuntu';
-const MASTER_NODE_IP = '65.2.224.226'; // Real Master Node IP
+const MASTER_NODE_IP = process.env.MASTER_NODE_IP || '65.2.224.226'; // Configure this in docker-compose.yml or .env
+
+/**
+ * Ensures the SSH key has the correct 600 permissions by copying it to a writable location.
+ * Windows Docker mounts often force 777 permissions, which SSH rejects.
+ */
+function getSafeSshKey() {
+  if (fs.existsSync(SAFE_KEY_PATH)) return SAFE_KEY_PATH;
+  if (!fs.existsSync(SSH_KEY_PATH)) {
+    throw new Error(`SSH Key not found at ${SSH_KEY_PATH}. Is the volume mounted?`);
+  }
+  
+  fs.copyFileSync(SSH_KEY_PATH, SAFE_KEY_PATH);
+  fs.chmodSync(SAFE_KEY_PATH, 0o600);
+  return SAFE_KEY_PATH;
+}
 
 /**
  * Execute a kubectl command via SSH to the Master Node
  */
 async function runKubectl(command) {
-  const sshCmd = `ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${MASTER_NODE_USER}@${MASTER_NODE_IP} "kubectl ${command}"`;
+  const safeKey = getSafeSshKey();
+  const sshCmd = `ssh -i ${safeKey} -o StrictHostKeyChecking=no ${MASTER_NODE_USER}@${MASTER_NODE_IP} "kubectl ${command}"`;
   
   try {
     const { stdout, stderr } = await execPromise(sshCmd);
