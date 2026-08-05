@@ -14,11 +14,28 @@
 
 <br />
 
-## 📖 Comprehensive Overview
+## 📖 What This Project Does
 
-Modern cloud-native applications are heavily distributed, running dozens of microservices on complex Kubernetes clusters. Making infrastructure changes—such as scaling pods, altering deployment strategies, or rolling out updates—runs a high risk of catastrophic failure if done blindly.
+**TwinDigital** is a comprehensive web-based platform that acts as a "Digital Twin" for cloud infrastructure. It helps DevOps teams visualize, monitor, and safely manage their live Kubernetes clusters without needing to manually run dense terminal commands or read complex YAML files.
 
-**TwinDigital** acts as the ultimate control plane and digital replica for your cloud infrastructure. By seamlessly connecting a powerful microservices backend to your live AWS Kubernetes cluster via Prometheus metrics, TwinDigital constructs an interactive, real-time visual map of your environment. DevOps engineers can visualize current traffic, simulate the impact of new configuration changes in a safe sandbox, and monitor resource consumption—bringing absolute operational control back to cloud engineering.
+When users log into the TwinDigital dashboard, they can:
+
+- **See a True "Live Map" of the Cluster**: 
+  The platform continuously syncs with the live Kubernetes cluster. It translates complicated cluster data into an interactive, drag-and-drop ReactFlow map. Users can visually see how their Pods, Nodes, Services, and Ingress controllers are connected in real-time.
+
+- **Simulate Changes in a Safe Sandbox**: 
+  Before applying risky infrastructure changes to production, users can simulate them. For example, if an engineer wants to scale a deployment from 3 replicas to 10, they can test it in the isolated sandbox first. The backend evaluates the potential impact (like CPU/RAM constraints) and highlights potential deployment risks *before* it is ever applied to the live cluster.
+
+- **Monitor Live Health & Telemetry**: 
+  Users can check live metrics—such as server load, pod health, and resource consumption—directly from the visual map, backed by deep Prometheus and Grafana integration.
+
+- **Automate Provisioning & Deployments**: 
+  The entire underlying infrastructure is managed via **Terraform** on AWS. All codebase updates are pushed through a strict 4-stage Jenkins CI/CD pipeline. This means code is automatically tested, securely scanned, containerized via Docker Hub, and deployed straight to the cloud seamlessly.
+
+- **Enforce Role-Based Security**: 
+  Different team members have different access levels. **Admins** have full read/write access and can trigger Terraform to spin up new infrastructure or mutate the live Kubernetes resources. **DevOps/Viewers** are restricted to read-only visualization and sandbox simulations to prevent unauthorized live changes.
+
+In short, TwinDigital prevents catastrophic deployment failures by giving engineers total visibility and a safe testing ground for their cloud infrastructure.
 
 ---
 
@@ -59,11 +76,11 @@ TwinDigital is built on a modern, enterprise-grade technology stack divided into
 
 ### ⚙️ Backend & API Gateway Layer
 - **Node.js 20 LTS (Express)**: Acts as the lightning-fast, asynchronous API Gateway and middleware, aggregating requests from the frontend and routing them to the internal network.
-- **Java Spring Boot**: The absolute core of the business logic. We implemented **7 independent microservices** handling specific domains such as Auth, Topology parsing, Metrics aggregation, and Simulation logic. 
+- **Java Spring Boot**: The absolute core of the business logic, structured into **7 independent microservices** handling specific domains such as Auth, Topology parsing, Metrics aggregation, and Simulation logic. 
 
 ### ☁️ Infrastructure & Orchestration (AWS + K8s)
 - **Amazon Web Services (AWS)**: The entire platform is hosted live on AWS EC2 instances situated in the Mumbai region.
-- **Terraform (IaC)**: We automated the entire AWS provisioning process using **4 distinct Terraform Modules** (VPC networking, Subnets, EC2 Instances, and strict Security Groups).
+- **Terraform (IaC)**: The entire AWS provisioning process is automated using **4 distinct Terraform Modules** (VPC networking, Subnets, EC2 Instances, and strict Security Groups).
 - **Kubernetes (kubeadm)**: Enterprise container orchestration running the microservices, ensuring high availability, load balancing, and self-healing.
 - **Docker & Docker Hub**: Every service is containerized. Jenkins builds the Docker images and pushes them directly to **Docker Hub**, replacing older AWS ECR implementations for broader accessibility.
 
@@ -141,7 +158,7 @@ If you want to run the digital twin locally without provisioning AWS cloud resou
    - Node.js API Gateway: `http://localhost:3000`
 
 ### Option B: Cloud Production Deployment (Terraform + AWS)
-To deploy the platform in a live production environment mimicking our Mumbai AWS cluster:
+To deploy the platform in a live production environment on AWS (e.g., Mumbai region):
 
 1. **Provision the Infrastructure**
    ```bash
@@ -169,9 +186,9 @@ To deploy the platform in a live production environment mimicking our Mumbai AWS
 
 ## 🛣️ Future Roadmap
 
-While the platform currently solves massive visibility and simulation issues, we are planning the following architectural upgrades:
+While the platform currently solves massive visibility and simulation issues, the following architectural upgrades are planned:
 
 - **GitOps Integration with ArgoCD**: Moving away from a push-based Jenkins deployment to a declarative, pull-based ArgoCD setup that continuously syncs the Kubernetes state directly with the `main` branch.
 - **Service Mesh Implementation**: Integrating **Istio** into the Kubernetes cluster to enforce strict mTLS encryption between the 7 Java microservices and to unlock advanced traffic routing capabilities (like Canary deployments).
 - **Automated Rollbacks**: Developing a listener that automatically reverts to the previous Docker Hub image tag if Prometheus detects a critical CPU/RAM spike within 5 minutes of a new deployment.
-- **Multi-Cloud Scalability**: Expanding our Terraform modules to support Google Kubernetes Engine (GKE) and Azure Kubernetes Service (AKS), allowing the Digital Twin to visualize hybrid-cloud environments seamlessly from one dashboard.
+- **Multi-Cloud Scalability**: Expanding the Terraform modules to support Google Kubernetes Engine (GKE) and Azure Kubernetes Service (AKS), allowing the Digital Twin to visualize hybrid-cloud environments seamlessly from one dashboard.
