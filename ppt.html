@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TwinDigital — DevOps Digital Twin Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --blue: #3B82F6;
+            --green: #22C55E;
+            --purple: #8B5CF6;
+            --orange: #F59E0B;
+            --bg: #080C14;
+            --surface: #0F1729;
+            --surface2: #162040;
+            --border: rgba(59, 130, 246, 0.2);
+            --text: #F1F5F9;
+            --muted: #94A3B8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+        }
+
+        /* ── SLIDE CONTAINER ── */
+        #deck {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 56px 72px;
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.45s ease, transform 0.45s ease;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+
+        .slide.exit {
+            opacity: 0;
+            transform: translateX(-60px);
+        }
+
+        /* ── BACKGROUNDS ── */
+        .slide::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 80% 10%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 10% 90%, rgba(34, 197, 94, 0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* ── SLIDE LABEL ── */
+        .slide-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-bottom: 10px;
+        }
+
+        /* ── HEADINGS ── */
+        h1 {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--blue), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--muted);
+            margin-top: 12px;
+            max-width: 700px;
+            line-height: 1.6;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .grid-6 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-green {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--purple);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .badge-orange {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--orange);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* ── TAGS ── */
+        .tag {
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--blue);
+            display: inline-block;
+            margin: 2px;
+        }
+
+        /* ── PILL LIST ── */
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* ── TABLE ── */
+        .tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .tbl th {
+            text-align: left;
+            padding: 8px 14px;
+            color: var(--muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .tbl td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.07);
+        }
+
+        .tbl tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tbl tr:hover td {
+            background: rgba(59, 130, 246, 0.04);
+        }
+
+        /* ── PIPELINE STEP ── */
+        .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+        }
+
+        .step.security {
+            border-color: rgba(245, 158, 11, 0.4);
+            color: var(--orange);
+            background: rgba(245, 158, 11, 0.07);
+        }
+
+        .step.build {
+            border-color: rgba(59, 130, 246, 0.4);
+            color: var(--blue);
+            background: rgba(59, 130, 246, 0.07);
+        }
+
+        .step.deploy {
+            border-color: rgba(34, 197, 94, 0.4);
+            color: var(--green);
+            background: rgba(34, 197, 94, 0.07);
+        }
+
+        .arrow-right {
+            color: var(--muted);
+            font-size: 18px;
+        }
+
+        /* ── STAT BOX ── */
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-num {
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* ── ROLE CARD ── */
+        .role-card {
+            text-align: center;
+            padding: 18px;
+        }
+
+        .role-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .role-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .role-desc {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ── ARCH BOX ── */
+        .arch-layer {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+        }
+
+        .arch-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .arch-items {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .arch-item {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+        }
+
+        .arch-arrow {
+            text-align: center;
+            color: var(--blue);
+            font-size: 20px;
+            margin: 2px 0;
+        }
+
+        /* ── NAVIGATION ── */
+        #nav {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(15, 23, 41, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 10px 24px;
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        .nav-btn:disabled {
+            color: var(--muted);
+            cursor: default;
+        }
+
+        #slide-counter {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* ── PROGRESS BAR ── */
+        #progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue), var(--green));
+            transition: width 0.4s ease;
+            z-index: 200;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* ── SLIDE DOTS ── */
+        #dots {
+            position: fixed;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dot.active {
+            background: var(--blue);
+            transform: scale(1.4);
+            border-color: var(--blue);
+        }
+
+        /* ── SLIDE 1 HERO ── */
+        .hero-title {
+            font-size: clamp(2.8rem, 5vw, 4.2rem);
+            font-weight: 900;
+            line-height: 1.05;
+        }
+
+        .hero-sub {
+            font-size: 1.2rem;
+            color: var(--muted);
+            margin: 16px 0 28px;
+            max-width: 600px;
+            line-height: 1.7;
+        }
+
+        .hero-badges {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9rem;
+            opacity: 0.12;
+            position: absolute;
+            right: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* ── FEATURE ICON CARD ── */
+        .feat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .feat-icon {
+            font-size: 1.6rem;
+        }
+
+        .feat-title {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .feat-desc {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ── TECH STACK SECTION ── */
+        .tech-section {
+            margin-bottom: 14px;
+        }
+
+        .tech-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        /* ── CHALLENGE ROW ── */
+        .challenge-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.07);
+        }
+
+        .challenge-problem {
+            font-size: 12px;
+            color: #EF4444;
+        }
+
+        .challenge-solution {
+            font-size: 12px;
+            color: var(--green);
+        }
+
+        /* ── CONCLUSION ── */
+        .conclusion-box {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 16px;
+            padding: 28px 36px;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .conclusion-quote {
+            font-size: 1.15rem;
+            color: var(--text);
+            line-height: 1.7;
+            font-style: italic;
+        }
+
+        /* ── KEYBOARD HINT ── */
+        #hint {
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="progress"></div>
+    <div id="dots"></div>
+
+    <div id="deck">
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 1 — TITLE -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s1">
+            <div style="position:absolute;right:80px;top:50%;transform:translateY(-50%);font-size:11rem;opacity:0.06;">
+                ☸️</div>
+            <div style="margin-top:40px;">
+                <div class="slide-label">Class Project Presentation</div>
+                <h1 class="hero-title">
+                    <span class="gradient-text">TwinDigital</span><br />
+                    DevOps Digital Twin<br />Platform
+                </h1>
+                <p class="hero-sub">A production-grade full-stack platform that creates a real-time virtual replica of a
+                    live Kubernetes cluster — enabling teams to visualize, simulate, and manage cloud
+                    infrastructure.</p>
+                <div class="hero-badges">
+                    <span class="badge badge-blue">⚛️ React 19</span>
+                    <span class="badge badge-green">🟢 Node.js</span>
+                    <span class="badge badge-orange">☕ Java Spring Boot</span>
+                    <span class="badge badge-purple">☸️ Kubernetes</span>
+                    <span class="badge badge-orange">🔒 DevSecOps</span>
+                    <span class="badge badge-blue">🌍 AWS EC2 — Mumbai</span>
+                </div>
+                <div style="margin-top:36px;font-size:13px;color:var(--muted);">
+                    GitHub: <span style="color:var(--blue);"><a
+                            href="https://github.com/RajaniHarika/Digital-twin-Platform"
+                            style="color:var(--blue);text-decoration:none;position:relative;z-index:50;pointer-events:auto;cursor:pointer;"
+                            onclick="window.open(this.href, '_blank'); return false;">github.com/RajaniHarika/Digital-twin-Platform</a></span>
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    Live: <span style="color:var(--green);"><a href="http://13.202.39.151"
+                            style="color:var(--green);text-decoration:none;position:relative;z-index:50;pointer-events:auto;cursor:pointer;"
+                            onclick="window.open(this.href, '_blank'); return false;">http://13.202.39.151</a></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 2 — PROBLEM STATEMENT -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s2">
+            <div class="slide-label">Problem Statement</div>
+            <h2>The Problem with Modern <span class="gradient-text">Cloud DevOps</span></h2>
+            <div class="grid-2" style="margin-top:28px;gap:24px;">
+                <div>
+                    <p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px;">Modern applications
+                        run as dozens of microservices on Kubernetes clusters. Teams make critical infrastructure
+                        changes — scaling deployments, rolling updates, node replacements — often <strong
+                            style="color:#EF4444;">without truly knowing the impact in advance.</strong></p>
+                    <div class="card" style="margin-bottom:14px;border-color:rgba(239,68,68,0.3);">
+                        <span style="font-size:1.4rem;">🔴</span>
+                        <div style="margin-top:8px;font-size:13px;"><strong>Blind Production Changes</strong></div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">A wrong deployment can crash
+                            services affecting thousands of users in seconds.</div>
+                    </div>
+                    <div class="card" style="margin-bottom:14px;border-color:rgba(239,68,68,0.3);">
+                        <span style="font-size:1.4rem;">💸</span>
+                        <div style="margin-top:8px;font-size:13px;"><strong>No Cost Visibility</strong></div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Teams over-provision resources
+                            without real-time cost feedback — wasting thousands monthly.</div>
+                    </div>
+                    <div class="card" style="border-color:rgba(239,68,68,0.3);">
+                        <span style="font-size:1.4rem;">🔧</span>
+                        <div style="margin-top:8px;font-size:13px;"><strong>Existing Tools Are Expensive</strong></div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Datadog costs $15-40/host/month.
+                            New Relic, Dynatrace — all enterprise-priced and complex to set up.</div>
+                    </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div class="card"
+                        style="flex:1;background:linear-gradient(135deg,rgba(59,130,246,0.05),rgba(34,197,94,0.05));border-color:rgba(34,197,94,0.3);">
+                        <div style="font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:12px;">💡 The
+                            Solution</div>
+                        <p style="font-size:13px;color:var(--muted);line-height:1.8;">A <strong
+                                style="color:var(--text);">Digital Twin</strong> of the Kubernetes cluster — a real-time
+                            virtual replica that lets you:</p>
+                        <ul style="margin-top:12px;padding-left:20px;font-size:13px;color:var(--muted);line-height:2;">
+                            <li>Visualize infrastructure as an interactive map</li>
+                            <li>Simulate deployment changes safely</li>
+                            <li>Track costs before they become a surprise</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="background:var(--surface2);text-align:center;padding:20px;">
+                        <div style="font-size:2rem;margin-bottom:8px;">✅</div>
+                        <div style="font-size:13px;font-weight:600;color:var(--green);">Built with open-source tools
+                            only.</div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">$0 monitoring cost beyond your
+                            existing AWS bill.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 3 — WHAT IS A DIGITAL TWIN -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s3">
+            <div class="slide-label">Concept</div>
+            <h2>What Is a <span class="gradient-text">Digital Twin?</span></h2>
+            <p class="subtitle">The concept is used in aerospace, manufacturing, and healthcare. We apply it to cloud
+                infrastructure.</p>
+            <div class="grid-3" style="margin-top:24px;">
+                <div class="card" style="text-align:center;padding:28px 20px;">
+                    <div style="font-size:2.5rem;margin-bottom:14px;">🏭</div>
+                    <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;">Manufacturing</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">BMW creates digital twins of car
+                        factories to simulate production lines and prevent downtime.</div>
+                </div>
+                <div class="card" style="text-align:center;padding:28px 20px;">
+                    <div style="font-size:2.5rem;margin-bottom:14px;">🚀</div>
+                    <div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:8px;">Aerospace</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">NASA uses digital twins of
+                        spacecraft to monitor systems and simulate repairs before executing them.</div>
+                </div>
+                <div class="card" style="text-align:center;padding:28px 20px;">
+                    <div style="font-size:2.5rem;margin-bottom:14px;">🏥</div>
+                    <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;">Healthcare</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">Surgeons practice on 3D digital twin
+                        organs before performing actual operations.</div>
+                </div>
+            </div>
+            <div style="margin-top:28px;text-align:center;">
+                <div
+                    style="display:inline-flex;align-items:center;gap:20px;background:var(--surface);border:1px solid rgba(34,197,94,0.3);border-radius:16px;padding:20px 36px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem;">☸️</div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Real K8s Cluster</div>
+                    </div>
+                    <div style="font-size:2rem;color:var(--green);">⟷</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem;">💻</div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">TwinDigital</div>
+                    </div>
+                    <div
+                        style="margin-left:16px;font-size:13px;color:var(--text);max-width:360px;text-align:left;line-height:1.6;">
+                        <strong style="color:var(--green);">TwinDigital</strong> creates a live virtual replica of our
+                        AWS Kubernetes cluster — let you simulate changes and control the cluster,
+                        all from a web browser.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 4 — FEATURES OVERVIEW -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s4">
+            <div class="slide-label">Platform Capabilities</div>
+            <h2>What <span class="gradient-text">TwinDigital</span> Does</h2>
+            <div class="grid-6" style="margin-top:24px;">
+                <div class="feat-card">
+                    <div class="feat-icon">🗺️</div>
+                    <div class="feat-title">Live Topology Graph</div>
+                    <div class="feat-desc">ReactFlow interactive visualization of the Kubernetes cluster, showing
+                        deployments, services, and running pods.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">⚙️</div>
+                    <div class="feat-title">Jenkins CI/CD Live Status</div>
+                    <div class="feat-desc">Real-time build status, pipeline stages, duration, and success rate queried
+                        directly from the Jenkins REST API.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">☕</div>
+                    <div class="feat-title">Microservices Architecture</div>
+                    <div class="feat-desc">7 Java Spring Boot microservices interacting with a central Node.js API
+                        Gateway, all running on Kubernetes.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🔒</div>
+                    <div class="feat-title">DevSecOps Security</div>
+                    <div class="feat-desc">Jenkins pipeline integrates GitLeaks, Semgrep (SAST), Checkov (IaC), and
+                        Trivy for full Docker/K8s vulnerability scanning.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">📊</div>
+                    <div class="feat-title">Prometheus Monitoring</div>
+                    <div class="feat-desc">Direct PromQL queries via Node.js fetching CPU, Memory, and Node health
+                        metrics from the live K8s cluster.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🔄</div>
+                    <div class="feat-title">Kubernetes Operations</div>
+                    <div class="feat-desc">Secure SSH integration allows executing kubectl commands (like restarts or
+                        log fetching) directly from the dashboard.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🐳</div>
+                    <div class="feat-title">Docker Hub Registry</div>
+                    <div class="feat-desc">Automated building, tagging, and pushing of 7 individual service container
+                        images to Docker Hub during CI/CD.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🛠️</div>
+                    <div class="feat-title">Infrastructure as Code</div>
+                    <div class="feat-desc">AWS EC2 instances, Security Groups, and Networking provisioned entirely via
+                        Terraform with S3 remote state.</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-title">👥 Role-Based Access</div>
+                    <div class="feat-desc">JWT-secured login with different dashboards for distinct user roles (Admin,
+                        DevOps, Viewer).</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 5 — ARCHITECTURE -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s5">
+            <div class="slide-label">System Design</div>
+            <h2>System <span class="gradient-text">Architecture</span></h2>
+            <div
+                style="margin-top:20px;display:grid;grid-template-columns:1fr 1.2fr;gap:24px;height:calc(100% - 100px);">
+                <div>
+                    <div class="arch-layer" style="border-color:rgba(59,130,246,0.4);">
+                        <div class="arch-label" style="color:var(--blue);">① User Browser</div>
+                        <div class="arch-items">
+                            <div class="arch-item" style="color:var(--blue);">React 19 SPA</div>
+                            <div class="arch-item">Material UI 7</div>
+                            <div class="arch-item">ReactFlow</div>
+                            <div class="arch-item">Recharts</div>
+                            <div class="arch-item">Port 3000 / 5000</div>
+                        </div>
+                    </div>
+                    <div class="arch-arrow">↕ HTTPS REST API + JWT Bearer Token</div>
+                    <div class="arch-layer" style="border-color:rgba(139,92,246,0.4);">
+                        <div class="arch-label" style="color:var(--purple);">② Node.js Backend — 13.202.39.151:5000
+                        </div>
+                        <div class="arch-items">
+                            <div class="arch-item">Express Router</div>
+                            <div class="arch-item">JWT Middleware</div>
+                            <div class="arch-item">17 Endpoints</div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                            <div class="arch-item" style="font-size:11px;color:var(--orange);">Prometheus Client</div>
+                            <div class="arch-item" style="font-size:11px;color:var(--orange);">Jenkins Client</div>
+                            <div class="arch-item" style="font-size:11px;color:var(--orange);">SSH kubectl</div>
+                        </div>
+                    </div>
+                    <div class="arch-arrow">↕ SSH / PromQL / Jenkins API</div>
+                    <div class="arch-layer" style="border-color:rgba(34,197,94,0.4);">
+                        <div class="arch-label" style="color:var(--green);">③ AWS EC2 + Kubernetes — ap-south-1</div>
+                        <div class="arch-items">
+                            <div class="arch-item" style="color:var(--green);">Master: 65.2.224.226</div>
+                            <div class="arch-item">Worker-1a</div>
+                            <div class="arch-item">Worker-1b</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="card" style="height:100%;overflow:auto;">
+                        <div
+                            style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:12px;">
+                            KUBERNETES NAMESPACES</div>
+                        <div style="margin-bottom:14px;">
+                            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;">
+                                digitaltwin namespace</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                                <div class="tag">api-gateway :8080</div>
+                                <div class="tag">auth-service :8081</div>
+                                <div class="tag">cluster-sync :8083</div>
+                                <div class="tag">topology-svc :8084</div>
+                                <div class="tag">simulation :8085</div>
+                                <div class="tag">risk-service :8086</div>
+                                <div class="tag">cost-service :8087</div>
+                                <div class="tag">MySQL Cluster</div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;">monitoring
+                                namespace</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                                <div class="tag" style="color:var(--orange);">Prometheus :30090</div>
+                                <div class="tag" style="color:var(--orange);">Grafana :30300</div>
+                                <div class="tag" style="color:var(--orange);">Node Exporter</div>
+                                <div class="tag" style="color:var(--orange);">kube-state-metrics</div>
+                            </div>
+                        </div>
+                        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:6px;">
+                            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;">CI/CD
+                                (Jenkins — 65.0.186.162:8080)</div>
+                            <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+                                git push → GitLeaks → Semgrep → Checkov<br />
+                                → Docker Build × 7 → Trivy CVE → Docker Hub<br />
+                                → kubectl apply → docker compose up
+                            </div>
+                        </div>
+                        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:10px;">
+                            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;">Terraform
+                                IaC (infrastructure/terraform/)</div>
+                            <div style="font-size:12px;color:var(--muted);">VPC • Subnets • Security Groups • EC2 × 4 •
+                                ECR × 7</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 6 — TECH STACK -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s6">
+            <div class="slide-label">Technologies</div>
+            <h2>Complete <span class="gradient-text">Tech Stack</span></h2>
+            <div class="grid-2" style="margin-top:24px;gap:20px;">
+                <div>
+                    <div class="tech-section">
+                        <div class="tech-section-title">⚛️ Frontend</div>
+                        <table class="tbl">
+                            <tr>
+                                <td><strong>React 19 + Vite 8</strong></td>
+                                <td style="color:var(--muted);">SPA + HMR build tool</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Material UI 7</strong></td>
+                                <td style="color:var(--muted);">UI component library</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ReactFlow</strong></td>
+                                <td style="color:var(--muted);">Interactive topology graph</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recharts</strong></td>
+                                <td style="color:var(--muted);">CPU, Memory, Cost charts</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Framer Motion</strong></td>
+                                <td style="color:var(--muted);">Page transitions, animations</td>
+                            </tr>
+                            <tr>
+                                <td><strong>React Router v7</strong></td>
+                                <td style="color:var(--muted);">Protected route guards</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tech-section" style="margin-top:14px;">
+                        <div class="tech-section-title">🟢 Backend</div>
+                        <table class="tbl">
+                            <tr>
+                                <td><strong>Java Spring Boot</strong></td>
+                                <td style="color:var(--muted);">Microservices framework</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Node.js 20 LTS</strong></td>
+                                <td style="color:var(--muted);">API Orchestrator / Web Server</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Express 4</strong></td>
+                                <td style="color:var(--muted);">REST API + static serving</td>
+                            </tr>
+                            <tr>
+                                <td><strong>jsonwebtoken</strong></td>
+                                <td style="color:var(--muted);">JWT sign + verify</td>
+                            </tr>
+                            <tr>
+                                <td><strong>node:child_process</strong></td>
+                                <td style="color:var(--muted);">SSH kubectl execution</td>
+                            </tr>
+                            <tr>
+                                <td><strong>node:fs</strong></td>
+                                <td style="color:var(--muted);">SSH key chmod 600 fix</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <div class="tech-section">
+                        <div class="tech-section-title">☸️ Infrastructure</div>
+                        <table class="tbl">
+                            <tr>
+                                <td><strong>Kubernetes</strong></td>
+                                <td style="color:var(--muted);">Self-managed on AWS EC2 (kubeadm)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Terraform</strong></td>
+                                <td style="color:var(--muted);">IaC — VPC, EC2, ECR provisioning</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Prometheus</strong></td>
+                                <td style="color:var(--muted);">Metrics scraping via PromQL</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Grafana</strong></td>
+                                <td style="color:var(--muted);">Metrics visualization (NodePort 30300)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Docker + Docker Hub</strong></td>
+                                <td style="color:var(--muted);">Containerization + registry</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Jenkins</strong></td>
+                                <td style="color:var(--muted);">CI/CD automation</td>
+                            </tr>
+                            <tr>
+                                <td><strong>AWS EC2</strong></td>
+                                <td style="color:var(--muted);">ap-south-1 (Mumbai)</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tech-section" style="margin-top:14px;">
+                        <div class="tech-section-title">🔒 DevSecOps Security</div>
+                        <table class="tbl">
+                            <tr>
+                                <td><strong>GitLeaks</strong></td>
+                                <td style="color:var(--muted);">Leaked secrets in git history</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Semgrep</strong></td>
+                                <td style="color:var(--muted);">SAST — SQL injection, XSS</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Checkov</strong></td>
+                                <td style="color:var(--muted);">K8s YAML misconfigurations</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Trivy</strong></td>
+                                <td style="color:var(--muted);">Docker image CVE scanning</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 7 — ROLE DASHBOARDS -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s7">
+            <div class="slide-label">Access Control</div>
+            <h2>6 Roles. 6 <span class="gradient-text">Unique Dashboards.</span></h2>
+            <p class="subtitle">JWT encodes the user's role. One login — completely different experience for each
+                person.</p>
+            <div class="grid-6" style="margin-top:22px;">
+                <div class="role-card card">
+                    <div class="role-icon">👑</div>
+                    <div class="role-title">Admin</div>
+                    <div class="role-desc">Full access. View any role's dashboard. Platform-wide overview.</div>
+                </div>
+                <div class="role-card card">
+                    <div class="role-icon">⚙️</div>
+                    <div class="role-title">DevOps Engineer</div>
+                    <div class="role-desc">Pods, CPU, Memory, Deployments, Jenkins Pipelines, Docker Images.</div>
+                </div>
+                <div class="role-card card">
+                    <div class="role-icon">☁️</div>
+                    <div class="role-title">Cloud Engineer</div>
+                    <div class="role-desc">AWS cost breakdown, instance counts, resource utilization by region.</div>
+                </div>
+                <div class="role-card card">
+                    <div class="role-icon">🛡️</div>
+                    <div class="role-title">SRE</div>
+                    <div class="role-desc">Service uptime, error budgets, alerts, incident history, on-call status.
+                    </div>
+                </div>
+                <div class="role-card card">
+                    <div class="role-icon">💻</div>
+                    <div class="role-title">Backend Engineer</div>
+                    <div class="role-desc">Service health, Docker images, deployment versions, log viewer.</div>
+                </div>
+                <div class="role-card card">
+                    <div class="role-icon">📋</div>
+                    <div class="role-title">Project Manager</div>
+                    <div class="role-desc">Sprint velocity, feature completion, team capacity, cost forecasts.</div>
+                </div>
+            </div>
+            <div style="margin-top:24px;" class="card" style="">
+                <div style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">
+                    <strong style="color:var(--text);">How it works:</strong>&nbsp;
+                    <span class="badge badge-blue">POST /api/auth/login</span> →
+                    <span style="color:var(--muted);">JWT signed with</span>
+                    <span class="badge badge-green">{ email, role, name }</span> →
+                    <span style="color:var(--muted);">Frontend reads role →</span>
+                    <span class="badge badge-purple">DashboardRouter renders correct view</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 8 — HOW DATA FLOWS (PROMETHEUS) -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s8">
+            <div class="slide-label">Data Integration</div>
+            <h2>How <span class="gradient-text">Real-Time Data</span> Flows</h2>
+            <div class="grid-2" style="margin-top:22px;gap:24px;">
+                <div>
+                    <div class="card" style="margin-bottom:14px;">
+                        <div
+                            style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--orange);margin-bottom:10px;">
+                            📡 PROMETHEUS — Real PromQL Queries</div>
+                        <div
+                            style="font-family:monospace;font-size:11px;color:var(--muted);line-height:2;background:var(--bg);padding:10px;border-radius:8px;">
+                            <span style="color:var(--blue);">avg</span>(rate(node_cpu_seconds_total{mode="idle"}[5m])) *
+                            100<br />
+                            sum(node_memory_MemAvailable_bytes)<br />
+                            sum(kube_pod_status_phase{phase=<span style="color:var(--green);">"Running"</span>})<br />
+                            sum(kube_pod_container_status_restarts_total)<br />
+                            sum(ALERTS{alertstate=<span style="color:var(--green);">"firing"</span>})
+                        </div>
+                        <div style="margin-top:8px;font-size:11px;color:var(--muted);">5-second timeout with graceful
+                            fallback to store.js if Prometheus is unreachable.</div>
+                    </div>
+                    <div class="card">
+                        <div
+                            style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--purple);margin-bottom:10px;">
+                            🔁 JENKINS — Live Build API</div>
+                        <div style="font-size:12px;color:var(--muted);line-height:1.7;">Queries <code
+                                style="color:var(--blue);font-size:11px;">65.0.186.162:8080/job/digital-twin-pipeline/api/json</code>
+                            using Basic Auth. Returns last 4 builds with status, duration, build number.</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="card" style="margin-bottom:14px;">
+                        <div
+                            style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:10px;">
+                            🖥️ SSH / kubectl — Cluster Control</div>
+                        <div style="font-size:12px;color:var(--muted);line-height:1.8;">
+                            Backend SSHes into Master Node (<code style="color:var(--blue);">65.2.224.226</code>) and
+                            runs kubectl commands:<br /><br />
+                            <code
+                                style="font-size:11px;color:var(--green);">kubectl rollout restart deployment -n digitaltwin</code><br />
+                            <code
+                                style="font-size:11px;color:var(--green);">kubectl logs -n digitaltwin -l app=&lt;service&gt; --tail=100</code><br />
+                            <code
+                                style="font-size:11px;color:var(--green);">kubectl get deployments -n digitaltwin -o json</code>
+                        </div>
+                    </div>
+                    <div class="card"
+                        style="background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(34,197,94,0.08));border-color:rgba(34,197,94,0.3);">
+                        <div
+                            style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:10px;">
+                            ✅ GRACEFUL FALLBACK SYSTEM</div>
+                        <div style="font-size:12px;color:var(--muted);line-height:1.7;">Every API response includes a
+                            <code style="color:var(--blue);">dataSource</code> field:<br />
+                            <span class="badge badge-green" style="margin-top:6px;">"prometheus"</span> — Live
+                            data<br />
+                            <span class="badge badge-orange" style="margin-top:6px;">"fallback"</span> — Curated
+                            store.js data<br /><br />
+                            The dashboard works even when the cluster is offline.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 9 — DEVSECOPS PIPELINE -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s9">
+            <div class="slide-label">CI/CD Security</div>
+            <h2><span class="gradient-text">DevSecOps</span> Pipeline</h2>
+            <p class="subtitle">Security built into every code push — not added as an afterthought.</p>
+            <div class="pipeline">
+                <div class="step">📝 git push<br /><span style="font-size:10px;color:var(--muted);">develop
+                        branch</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step security">🔍 GitLeaks<br /><span style="font-size:10px;">Leaked secrets?</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step security">🔍 Semgrep<br /><span style="font-size:10px;">SQL inj, XSS?</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step security">🔍 Checkov<br /><span style="font-size:10px;">IaC misconfig?</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step build">🐳 Docker Build<br /><span style="font-size:10px;">× 7 services</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step security">🔍 Trivy CVE<br /><span style="font-size:10px;">HIGH/CRITICAL?</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step build">📦 Docker Hub<br /><span style="font-size:10px;">Push images</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step deploy">🚀 K8s Deploy<br /><span style="font-size:10px;">kubectl apply</span></div>
+                <div class="arrow-right">→</div>
+                <div class="step deploy">🚀 App Deploy<br /><span style="font-size:10px;">docker compose up</span></div>
+            </div>
+            <div class="grid-4" style="margin-top:22px;">
+                <div class="card">
+                    <div style="font-size:1.1rem;margin-bottom:6px;">🔍</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);">GitLeaks</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px;">Scans entire git commit history for
+                        accidentally committed passwords, API keys, AWS credentials.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.1rem;margin-bottom:6px;">🔍</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);">Semgrep (SAST)</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px;">Static code analysis — detects SQL
+                        injection, cross-site scripting, command injection in JavaScript files.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.1rem;margin-bottom:6px;">🔍</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);">Checkov (IaC)</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px;">Checks K8s YAML and Terraform for
+                        containers running as root, missing resource limits, privileged mode.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.1rem;margin-bottom:6px;">🔍</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);">Trivy (CVE)</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px;">Scans OS packages and npm
+                        dependencies inside each Docker image for known CVE vulnerabilities.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 10 — DOCKER HUB + K8S DEPLOYMENT -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s10">
+            <div class="slide-label">Container Registry & Deployment</div>
+            <h2>Docker Hub + <span class="gradient-text">Kubernetes Deployment</span></h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:6px;margin-bottom:16px;">Images are built by Jenkins,
+                scanned by Trivy, pushed to Docker Hub, then pulled into the Kubernetes cluster via
+                <code>imagePullPolicy: Always</code>.
+            </p>
+            <div class="grid-2" style="gap:20px;">
+                <div>
+                    <div
+                        style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--blue);margin-bottom:12px;">
+                        🐳 DOCKER HUB — Image Registry</div>
+                    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Account: <code
+                            style="color:var(--blue);">docker.io/shyammedh</code> — 7 repositories, one per service
+                    </div>
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Tag</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-api-gateway</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-auth-service</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-cluster-sync-service</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-topology-service</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-simulation-service</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-risk-service</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                            <tr>
+                                <td><code>shyammedh/digitaltwin-cost-service</code></td>
+                                <td style="color:var(--green);">:latest</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div
+                        style="margin-top:12px;background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--border);font-family:monospace;font-size:11px;color:var(--muted);line-height:2;">
+                        docker build -t <span style="color:var(--blue);">shyammedh/digitaltwin-api-gateway:latest</span>
+                        .<br />
+                        trivy image --severity HIGH,CRITICAL ...<br />
+                        docker push <span style="color:var(--green);">shyammedh/digitaltwin-api-gateway:latest</span>
+                    </div>
+                </div>
+                <div>
+                    <div
+                        style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:12px;">
+                        ☸️ KUBERNETES MANIFESTS (infrastructure/k8s/)</div>
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Manifest</th>
+                                <th>Creates</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>namespaces.yaml</td>
+                                <td><code>digitaltwin</code> + <code>monitoring</code></td>
+                            </tr>
+                            <tr>
+                                <td>deployments/*.yaml</td>
+                                <td>7 Deployments + ClusterIP Services</td>
+                            </tr>
+                            <tr>
+                                <td>statefulsets/prometheus</td>
+                                <td>Prometheus + PVC (metric persistence)</td>
+                            </tr>
+                            <tr>
+                                <td>configmaps/app-config</td>
+                                <td>Env vars for all services</td>
+                            </tr>
+                            <tr>
+                                <td>configmaps/prometheus</td>
+                                <td>Scrape jobs: node-exporter + kube-state</td>
+                            </tr>
+                            <tr>
+                                <td>rbac/</td>
+                                <td>ClusterRole for kube-state-metrics</td>
+                            </tr>
+                            <tr>
+                                <td>deployments/node-exporter</td>
+                                <td>DaemonSet — OS metrics on every node</td>
+                            </tr>
+                            <tr>
+                                <td>ingress/</td>
+                                <td>URL routing for K8s services</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div
+                        style="margin-top:12px;background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--border);">
+                        <div
+                            style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">
+                            DEPLOYMENT PATTERN — all 7 services</div>
+                        <div style="font-family:monospace;font-size:10px;color:var(--muted);line-height:1.9;">
+                            image: <span
+                                style="color:var(--blue);">shyammedh/digitaltwin-&lt;svc&gt;:latest</span><br />
+                            imagePullPolicy: <span style="color:var(--green);">Always</span><br />
+                            resources.limits: memory=512Mi, cpu=300m<br />
+                            livenessProbe: /actuator/health<br />
+                            envFrom: configMapRef(app-config) + secretRef(jwt-secret)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 11 — CHALLENGES -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s11">
+            <div class="slide-label">Lessons Learned</div>
+            <h2>Real <span class="gradient-text">Challenges</span> I Solved</h2>
+            <p style="color:var(--muted);font-size:13px;margin-top:8px;margin-bottom:18px;">Every problem taught a
+                production-level lesson about distributed systems.</p>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px 18px;">
+                <div
+                    style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <div
+                        style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">
+                        Problem Faced</div>
+                    <div
+                        style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">
+                        How I Fixed It</div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-problem">🔴 Prometheus metrics all returned 0 or null</div>
+                    <div class="challenge-solution">✅ Rewrote PromQL from Actuator up{} metrics to
+                        node_cpu_seconds_total — correct for Node Exporter</div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-problem">🔴 SSH rejected: "Permission denied (publickey)"</div>
+                    <div class="challenge-solution">✅ Windows Docker forces 777 permissions on volumes. Built
+                        getSafeSshKey() — copies key + chmod 600 on start</div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-problem">🔴 White screen flash when switching dark mode tabs</div>
+                    <div class="challenge-solution">✅ LoadingSkeleton had hardcoded white background — replaced with MUI
+                        sx={{ bgcolor: 'background.default' }}</div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-problem">🔴 Frontend API calls failing in dev (CORS errors)</div>
+                    <div class="challenge-solution">✅ Vite config.js was returning empty string — fixed to always return
+                        /api prefix for proper proxy</div>
+                </div>
+                <div class="challenge-row">
+                    <div class="challenge-problem">🔴 Docker build taking 3+ minutes on every rebuild</div>
+                    <div class="challenge-solution">✅ Missing .dockerignore — 60MB node_modules sent to Docker daemon.
+                        Added .dockerignore, builds now take 25s</div>
+                </div>
+                <div class="challenge-row" style="border-bottom:none;">
+                    <div class="challenge-problem">🔴 Breadcrumb "TwinDigital" went to /dashboard instead of landing
+                        page</div>
+                    <div class="challenge-solution">✅ Changed route from isPublic: true to noAuth: true so logged-in
+                        users can visit landing page</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 12 — WHAT I LEARNED -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s12">
+            <div class="slide-label">Key Takeaways</div>
+            <h2>What I <span class="gradient-text">Learned</span></h2>
+            <div class="grid-2" style="margin-top:22px;gap:24px;">
+                <div>
+                    <div
+                        style="font-size:12px;font-weight:700;letter-spacing:2px;color:var(--blue);margin-bottom:14px;">
+                        🧠 TECHNICAL SKILLS GAINED</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">☸️</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">Kubernetes Architecture</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Pods, Deployments,
+                                    Services, Namespaces, RBAC, StatefulSets, DaemonSets, Ingress — in a real cluster
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">📡</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">PromQL & Observability</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Writing PromQL queries,
+                                    understanding time-series data, Node Exporter vs kube-state-metrics differences
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">🔑</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">JWT Authentication</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Stateless auth, token
+                                    signing, middleware guards, role-based access — without any external auth library
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">🏗️</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">Infrastructure as Code</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Terraform modules —
+                                    networking, compute, security, ECR. The entire AWS environment in code files.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div
+                        style="font-size:12px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:14px;">
+                        💡 ENGINEERING THINKING</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">🔒</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">DevSecOps Mindset</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Security is not a final
+                                    step — it's automated into every commit. GitLeaks, Semgrep, Checkov, Trivy.</div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">🛡️</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">Graceful Degradation</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Designed every API to
+                                    fall back to curated data when live systems are unavailable — system stays
+                                    functional.</div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">🔧</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">Debugging Distributed Systems</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Tracing bugs across SSH,
+                                    Docker, Prometheus, Jenkins, browser — reading real error logs to find root cause.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start;">
+                            <span style="font-size:1.2rem;">📐</span>
+                            <div>
+                                <div style="font-size:12px;font-weight:600;">Full-Stack Architecture</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Designed the data flow
+                                    from browser → API → Prometheus → K8s — every layer talking to the next correctly.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 13 — PROJECT STATS -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s13">
+            <div class="slide-label">Project Metrics</div>
+            <h2>By the <span class="gradient-text">Numbers</span></h2>
+            <div class="grid-4" style="margin-top:28px;gap:20px;">
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--blue);">2,000+</div>
+                    <div class="stat-label">Lines of Code Written</div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--green);">17</div>
+                    <div class="stat-label">REST API Endpoints</div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--purple);">9</div>
+                    <div class="stat-label">PromQL Queries Used</div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--orange);">7</div>
+                    <div class="stat-label">K8s Microservices</div>
+                </div>
+            </div>
+            <div class="grid-4" style="margin-top:16px;gap:20px;">
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--green);">4</div>
+                    <div class="stat-label">DevSecOps Security Stages</div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--blue);">2</div>
+                    <div class="stat-label">User Roles (Admin / DevOps)</div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--orange);">4</div>
+                    <div class="stat-label">Terraform Modules</div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-num" style="color:var(--purple);">1</div>
+                    <div class="stat-label">Live AWS K8s Cluster (Mumbai)</div>
+                </div>
+            </div>
+            <div style="margin-top:24px;" class="card" style="text-align:center;padding:16px;">
+                <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;">
+                    <span class="badge badge-blue">React 19 + Vite</span>
+                    <span class="badge badge-green">Node.js 20 LTS</span>
+                    <span class="badge badge-orange">Java Spring Boot</span>
+                    <span class="badge badge-purple">Kubernetes + kubeadm</span>
+                    <span class="badge badge-orange">Terraform + AWS</span>
+                    <span class="badge badge-blue">Prometheus + Grafana</span>
+                    <span class="badge badge-green">Jenkins CI/CD</span>
+                    <span class="badge badge-purple">Docker + Docker Hub</span>
+                    <span class="badge badge-orange">JWT Auth</span>
+                    <span class="badge badge-blue">Material UI 7</span>
+                    <span class="badge badge-green">ReactFlow + Recharts</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 14 — FUTURE SCOPE -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s14">
+            <div class="slide-label">Roadmap</div>
+            <h2>Future <span class="gradient-text">Scope</span></h2>
+            <div class="grid-3" style="margin-top:24px;gap:18px;">
+                <div class="card">
+                    <div style="font-size:1.3rem;margin-bottom:8px;">🔄</div>
+                    <div style="font-size:13px;font-weight:700;">GitOps with ArgoCD</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">Replace Jenkins
+                        push-deploy with ArgoCD pull-based GitOps — auto-sync when develop branch changes.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.3rem;margin-bottom:8px;">🌍</div>
+                    <div style="font-size:13px;font-weight:700;">Multi-Cloud Support</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">Add GCP GKE and Azure
+                        AKS clusters — manage all three from one TwinDigital dashboard.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.3rem;margin-bottom:8px;">🗄️</div>
+                    <div style="font-size:13px;font-weight:700;">Persistent Database</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">Replace in-memory
+                        store.js with PostgreSQL or MongoDB — persist simulations, alerts, and history.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.3rem;margin-bottom:8px;">🔔</div>
+                    <div style="font-size:13px;font-weight:700;">Real-Time Push Alerts</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">WebSocket push
+                        notifications to browser + Slack/Email when a pod crashes or CPU threshold is breached.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.3rem;margin-bottom:8px;">🕸️</div>
+                    <div style="font-size:13px;font-weight:700;">Service Mesh Integration</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">Implement Istio for
+                        mTLS encryption between the 7 Java microservices and advanced traffic routing.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.3rem;margin-bottom:8px;">↩️</div>
+                    <div style="font-size:13px;font-weight:700;">Automated Rollbacks</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">Automatically revert
+                        to the previous Docker image version if Prometheus detects an error spike post-deployment.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- SLIDE 15 — THANK YOU -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s15">
+            <div
+                style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;">
+                <div style="font-size:4rem;margin-bottom:16px;">🔷</div>
+                <h1 style="font-size:3.2rem;font-weight:900;" class="gradient-text">Thank You!</h1>
+                <p style="color:var(--muted);font-size:1rem;margin-top:12px;max-width:600px;line-height:1.7;">Any
+                    questions about the architecture, the tech stack, the DevSecOps pipeline, or the implementation
+                    challenges?</p>
+                <div class="conclusion-box" style="max-width:760px;margin-top:32px;">
+                    <p class="conclusion-quote">"TwinDigital solves a real DevOps problem — making blind infrastructure
+                        changes. By combining React 19, Java Spring Boot, Node.js, Kubernetes, Prometheus, and a 4-stage
+                        DevSecOps
+                        pipeline, I built a platform that gives any team complete visibility, management capability, and
+                        operational control over their cloud infrastructure."</p>
+                </div>
+                <div style="margin-top:36px;display:flex;gap:28px;flex-wrap:wrap;justify-content:center;">
+                    <div>
+                        <div
+                            style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">
+                            GitHub</div>
+                        <div style="font-size:14px;color:var(--blue);font-weight:600;">
+                            <a href="https://github.com/RajaniHarika/Digital-twin-Platform" target="_blank"
+                                style="color:var(--blue);text-decoration:none;position:relative;z-index:50;pointer-events:auto;cursor:pointer;"
+                                onclick="window.open(this.href, '_blank'); return false;">github.com/RajaniHarika/Digital-twin-Platform</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">
+                            Live App</div>
+                        <div style="font-size:14px;color:var(--green);font-weight:600;">
+                            <a href="http://13.202.39.151" target="_blank"
+                                style="color:var(--green);text-decoration:none;position:relative;z-index:50;pointer-events:auto;cursor:pointer;"
+                                onclick="window.open(this.href, '_blank'); return false;">http://13.202.39.151</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">
+                            Branch</div>
+                        <div style="font-size:14px;color:var(--purple);font-weight:600;">develop</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end #deck -->
+
+    <div id="nav">
+        <button class="nav-btn" id="btnPrev" onclick="go(-1)">←</button>
+        <span id="slide-counter">1 / 15</span>
+        <button class="nav-btn" id="btnNext" onclick="go(1)">→</button>
+    </div>
+
+    <div id="hint">← → arrow keys to navigate • F for fullscreen</div>
+
+    <script>
+        const TOTAL = 15;
+        let cur = 1;
+
+        const slides = () => document.querySelectorAll('.slide');
+        const dot = (i) => document.querySelectorAll('.dot')[i - 1];
+        const progress = document.getElementById('progress');
+
+        // Build dots
+        const dotsEl = document.getElementById('dots');
+        for (let i = 1; i <= TOTAL; i++) {
+            const d = document.createElement('div');
+            d.className = 'dot' + (i === 1 ? ' active' : '');
+            d.onclick = () => goTo(i);
+            d.title = 'Slide ' + i;
+            dotsEl.appendChild(d);
+        }
+
+        function goTo(n) {
+            if (n < 1 || n > TOTAL) return;
+            const prev = document.getElementById('s' + cur);
+            prev.classList.remove('active');
+            prev.classList.add('exit');
+            setTimeout(() => prev.classList.remove('exit'), 450);
+
+            dot(cur).classList.remove('active');
+            cur = n;
+            dot(cur).classList.add('active');
+
+            const next = document.getElementById('s' + cur);
+            next.style.transform = 'translateX(60px)';
+            requestAnimationFrame(() => { next.classList.add('active'); next.style.transform = ''; });
+
+            document.getElementById('slide-counter').textContent = cur + ' / ' + TOTAL;
+            document.getElementById('btnPrev').disabled = cur === 1;
+            document.getElementById('btnNext').disabled = cur === TOTAL;
+            progress.style.width = ((cur / TOTAL) * 100) + '%';
+        }
+
+        function go(dir) { goTo(cur + dir); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(1);
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+            if (e.key === 'f' || e.key === 'F') {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else document.exitFullscreen();
+            }
+        });
+
+        // Init
+        goTo(1);
+    </script>
+</body>
+
+</html>

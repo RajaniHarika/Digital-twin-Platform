@@ -63,7 +63,7 @@ const MarketingNavbar = () => {
                 overflow: 'hidden',
               }}
             >
-              <img src="/logo.jpeg" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </Box>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 800, color: palette.textPrimary, lineHeight: 1.1, letterSpacing: '-0.03em' }}>

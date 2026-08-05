@@ -101,7 +101,7 @@ const Sidebar = () => {
                   overflow: 'hidden',
                 }}
               >
-                <img src="/logo.jpeg" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </Box>
               <Box>
                 <Typography variant="subtitle1" fontWeight={800} sx={{ color: tokens.text, lineHeight: 1.1 }}>

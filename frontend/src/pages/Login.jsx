@@ -108,7 +108,7 @@ const Login = () => {
                       overflow: 'hidden',
                     }}
                   >
-                    <img src="/logo.jpeg" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </Box>
                   <Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
