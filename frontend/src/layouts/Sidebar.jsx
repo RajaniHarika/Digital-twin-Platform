@@ -93,15 +93,12 @@ const Sidebar = () => {
                 sx={{
                   width: 40,
                   height: 40,
-                  borderRadius: '50%',
-                  bgcolor: palette.accent,
-                  display: 'grid',
-                  placeItems: 'center',
-                  boxShadow: shadows.button,
-                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </Box>
               <Box>
                 <Typography variant="subtitle1" fontWeight={800} sx={{ color: tokens.text, lineHeight: 1.1 }}>

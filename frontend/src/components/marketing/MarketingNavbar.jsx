@@ -56,14 +56,12 @@ const MarketingNavbar = () => {
               sx={{
                 width: 46,
                 height: 46,
-                ...iconCircleStyle,
-                display: 'grid',
-                placeItems: 'center',
-                boxShadow: shadows.button,
-                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </Box>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 800, color: palette.textPrimary, lineHeight: 1.1, letterSpacing: '-0.03em' }}>

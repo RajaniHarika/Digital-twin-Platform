@@ -101,14 +101,12 @@ const Login = () => {
                     sx={{
                       width: 48,
                       height: 48,
-                      borderRadius: '50%',
-                      bgcolor: palette.accent,
-                      display: 'grid',
-                      placeItems: 'center',
-                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src="/logo.png" alt="TwinDigital Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   </Box>
                   <Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
