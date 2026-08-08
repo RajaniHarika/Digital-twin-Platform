@@ -894,6 +894,53 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════ -->
+        <!-- NEW SLIDE — MICROSERVICES -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="slide" id="s-microservices">
+            <div class="slide-label">Architecture Deep Dive</div>
+            <h2>The 7 <span class="gradient-text">Microservices</span></h2>
+            <div class="grid-3" style="margin-top:24px;gap:20px;">
+                <div class="card">
+                    <div style="font-size:1.6rem;margin-bottom:10px;">🌐</div>
+                    <div style="font-weight:700;color:var(--blue);margin-bottom:6px;">API Gateway</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">Acts as the single entry point for all frontend requests, routing traffic to the internal network securely.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.6rem;margin-bottom:10px;">🔐</div>
+                    <div style="font-weight:700;color:var(--green);margin-bottom:6px;">Auth Service</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">Handles JWT token issuance and strict Role-Based Access Control (Admin vs Viewer).</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.6rem;margin-bottom:10px;">🔄</div>
+                    <div style="font-weight:700;color:var(--purple);margin-bottom:6px;">Cluster Sync Service</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">Continuously pulls state from Kubernetes to ensure the Digital Twin is perfectly synced.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.6rem;margin-bottom:10px;">🗺️</div>
+                    <div style="font-weight:700;color:var(--orange);margin-bottom:6px;">Topology Service</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">Parses complex cluster YAML data into structured nodes and edges for the ReactFlow visual map.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.6rem;margin-bottom:10px;">🧪</div>
+                    <div style="font-weight:700;color:var(--blue);margin-bottom:6px;">Simulation Service</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">The sandbox engine. Evaluates proposed scaling or deployment changes before applying them.</div>
+                </div>
+                <div class="card">
+                    <div style="font-size:1.6rem;margin-bottom:10px;">⚠️</div>
+                    <div style="font-weight:700;color:var(--green);margin-bottom:6px;">Risk Service</div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.6;">Analyzes live CPU/RAM metrics against simulated deployments to flag potential crash risks early.</div>
+                </div>
+                <div class="card" style="grid-column: 1 / -1; display:flex; align-items:center; gap:20px;">
+                    <div style="font-size:2rem;">💰</div>
+                    <div>
+                        <div style="font-weight:700;color:var(--purple);margin-bottom:6px;">Cost Service</div>
+                        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Calculates estimated infrastructure costs based on running pods and simulated capacity.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
         <!-- SLIDE 6 — TECH STACK -->
         <!-- ══════════════════════════════════════════════════════ -->
         <div class="slide" id="s6">
@@ -956,6 +1003,10 @@
                             <tr>
                                 <td><strong>node:fs</strong></td>
                                 <td style="color:var(--muted);">SSH key chmod 600 fix</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Redis</strong></td>
+                                <td style="color:var(--muted);">In-memory caching & rate limiting</td>
                             </tr>
                         </table>
                     </div>
@@ -1635,10 +1686,10 @@
     <div id="hint">← → arrow keys to navigate • F for fullscreen</div>
 
     <script>
-        const TOTAL = 15;
+        const allSlides = Array.from(document.querySelectorAll('.slide'));
+        const TOTAL = allSlides.length;
         let cur = 1;
 
-        const slides = () => document.querySelectorAll('.slide');
         const dot = (i) => document.querySelectorAll('.dot')[i - 1];
         const progress = document.getElementById('progress');
 
@@ -1654,16 +1705,25 @@
 
         function goTo(n) {
             if (n < 1 || n > TOTAL) return;
-            const prev = document.getElementById('s' + cur);
-            prev.classList.remove('active');
-            prev.classList.add('exit');
-            setTimeout(() => prev.classList.remove('exit'), 450);
+            
+            // Handle first load where prev might not be set or active
+            if (cur !== n || !allSlides[cur - 1].classList.contains('active')) {
+                const prev = allSlides[cur - 1];
+                prev.classList.remove('active');
+                prev.classList.add('exit');
+                setTimeout(() => prev.classList.remove('exit'), 450);
+                
+                if(document.querySelectorAll('.dot').length > 0) {
+                    dot(cur).classList.remove('active');
+                }
+            }
 
-            dot(cur).classList.remove('active');
             cur = n;
-            dot(cur).classList.add('active');
+            if(document.querySelectorAll('.dot').length > 0) {
+                dot(cur).classList.add('active');
+            }
 
-            const next = document.getElementById('s' + cur);
+            const next = allSlides[cur - 1];
             next.style.transform = 'translateX(60px)';
             requestAnimationFrame(() => { next.classList.add('active'); next.style.transform = ''; });
 
